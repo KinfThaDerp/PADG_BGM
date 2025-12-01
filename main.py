@@ -50,3 +50,4 @@ while True:
     elif appState == availableStates[2]:
         mapWindow()
 
+print("Progrram closed")
