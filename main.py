@@ -10,15 +10,17 @@ appState = availableStates[1]
 
 def logIn(window):
     global appState
-    appstate = availableStates[2]
+    appState = availableStates[2]
     window.destroy()
 
 def logOut(window):
     global appState
-    appstate = availableStates[1]
+    appState = availableStates[1]
     window.destroy()
 
 def loginWindow():
+    global appState
+    appState = availableStates[0]
     root_log = tk.Tk()
     root_log.title("Okno Logowania")
     root_log.geometry("300x300")
@@ -27,10 +29,11 @@ def loginWindow():
     button_login.pack()
 
     root_log.mainloop()
-    global appState
-    appState = availableStates[0]
+
 
 def mapWindow():
+    global appState
+    appState = availableStates[0]
     root_map = tk.Tk()
     root_map.title("Okno Map")
     root_map.geometry("1280x720")
@@ -39,8 +42,7 @@ def mapWindow():
     button_logot.pack()
 
     root_map.mainloop()
-    global appState
-    appState = availableStates[0]
+
 
 while True:
     if appState == availableStates[0]:
@@ -50,3 +52,4 @@ while True:
     elif appState == availableStates[2]:
         mapWindow()
 
+print("Program closed")
