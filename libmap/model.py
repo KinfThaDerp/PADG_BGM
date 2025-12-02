@@ -17,32 +17,39 @@ class ContactData:
         else:
             raise Exception("Invalid Email!")
 
+class AddressData:
+    def __init__(self, voivodeshipName, cityName:str, streetName:str, buildingNumber:str, apartmentNumber:str, latitude:float, longitude:float):
+        self.voivodeship = voivodeshipName
+        self.city = cityName
+        self.street = streetName
+        self.building = buildingNumber
+        self.apartment = apartmentNumber
+        self.coords = [latitude, longitude]
+
+class Person:
+    def __init__(self, name:str, surname:str, contact:ContactData, address:AddressData):
+        self.name = name
+        self.surname = surname
+        self.contact = contact
+        self.address = address
+
+class LibraryWorker(Person):
+    def __init__(self, name:str, surname:str, contact:ContactData, address:AddressData):
+        super().__init__(name, surname, contact, address)
+
+class LibraryReader(Person):
+    def __init__(self, name:str, surname:str, contact:ContactData, address:AddressData):
+        super().__init__(name, surname, contact, address)
 
 class Library:
-    def __init__(self, name, address, coords, phonenumber, email):
+    def __init__(self, name:str, address:AddressData, contact:ContactData):
         self.name = name
         self.address = address
-        self.coords = coords
-        self.contact = ContactData(phonenumber, email)
+        self.contact = contact
 
 class City:
     def __init__(self):
         self.name = ""
-
-class Person:
-    def __init__(self, name:str, surname:str):
-        self.name = name
-        self.surname = surname
-
-class LibraryWorker(Person):
-    def __init__(self, name:str, surname:str):
-        super().__init__(name, surname)
-
-class LibraryReader(Person):
-    def __init__(self, name:str, surname:str):
-        super().__init__(name, surname)
-
 if __name__ == '__main__':
-
-    ziemniak = ContactData(123456789,"bassam.grzegorz@gmail.com")
-    print(ziemniak.phoneNumber, ziemniak.email)
+    janek = LibraryReader("Janek", "Borowski", 953123456, "email@gmail.com")
+    print(janek.name, janek.surname, janek.contact.phoneNumber, janek.contact.email)
