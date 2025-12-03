@@ -16,6 +16,11 @@ class ContactData:
             return self.email
         else:
             raise Exception("Invalid Email!")
+    def getData(self):
+        return {
+            "phoneNumber": self.phoneNumber,
+            "email": self.email
+        }
 
 class AddressData:
     def __init__(self, voivodeshipName, cityName:str, streetName:str, buildingNumber:str, apartmentNumber:str, latitude:float, longitude:float):
@@ -25,6 +30,15 @@ class AddressData:
         self.building = buildingNumber
         self.apartment = apartmentNumber
         self.coords = [latitude, longitude]
+    def getData(self):
+        return {
+            "voivodeship": self.voivodeship,
+            "city": self.city,
+            "street": self.street,
+            "building": self.building,
+            "apartment": self.apartment,
+            "coords": self.coords
+        }
 
 class Person:
     def __init__(self, name:str, surname:str, contact:ContactData, address:AddressData):
@@ -37,10 +51,6 @@ class LibraryWorker(Person):
     def __init__(self, name:str, surname:str, contact:ContactData, address:AddressData):
         super().__init__(name, surname, contact, address)
 
-class LibraryReader(Person):
-    def __init__(self, name:str, surname:str, contact:ContactData, address:AddressData):
-        super().__init__(name, surname, contact, address)
-
 class Library:
     def __init__(self, name:str, address:AddressData, contact:ContactData):
         self.name = name
@@ -50,6 +60,11 @@ class Library:
 class City:
     def __init__(self):
         self.name = ""
+
 if __name__ == '__main__':
-    janek = LibraryReader("Janek", "Borowski", 953123456, "email@gmail.com")
-    print(janek.name, janek.surname, janek.contact.phoneNumber, janek.contact.email)
+    janek = Person("Janek", "Borowski",
+                   ContactData(953123456, "email@gmail.com"),
+                   AddressData("Mazowieckie", "Warszawa", "Przykładowa", "43", "10", 50.21, 50.30))
+    print(janek.name, janek.surname)
+    print(janek.contact.getData())
+    print(janek.address.getData())
