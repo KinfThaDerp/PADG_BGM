@@ -25,8 +25,22 @@ def loginWindow():
     root_log.title("Okno Logowania")
     root_log.geometry("300x300")
 
+    frame_formularz = tk.Frame(root_log)
+    frame_formularz.pack(pady=50)
+
     button_login = tk.Button(root_log, text="Login", command=lambda: logIn(root_log))
     button_login.pack()
+
+    label_Username = tk.Label(frame_formularz, text="Username: ")
+    label_Username.grid(row=0,column=0)
+    entry_Username = tk.Entry(frame_formularz)
+    entry_Username.grid(row=0, column=1)
+
+    label_Password = tk.Label(frame_formularz, text="Password: ")
+    label_Password.grid(row=1, column=0)
+    entry_Password = tk.Entry(frame_formularz)
+    entry_Password.grid(row=1, column=1)
+
 
     root_log.mainloop()
 
