@@ -40,16 +40,21 @@ class AddressData:
             "coords": self.coords
         }
 
+class Book:
+    def __init__(self, title:str, author:str, isbn:str, publisher, genre:list):
+        self.title = title
+        self.author = author
+        self.isbn = isbn
+        self.publisher = publisher
+        self.genre = genre
+
 class Person:
-    def __init__(self, name:str, surname:str, contact:ContactData, address:AddressData):
+    def __init__(self, username:str, name:str, surname:str, contact:ContactData, address:AddressData):
+        self.username = username
         self.name = name
         self.surname = surname
         self.contact = contact
         self.address = address
-
-class LibraryWorker(Person):
-    def __init__(self, name:str, surname:str, contact:ContactData, address:AddressData):
-        super().__init__(name, surname, contact, address)
 
 class Library:
     def __init__(self, name:str, address:AddressData, contact:ContactData):
@@ -57,12 +62,20 @@ class Library:
         self.address = address
         self.contact = contact
 
+class BookCopy:
+    def __init__(self, book:Book, barcode:int, library:Library, condition):
+        self.book = Book
+        self.barcode = barcode
+        self.library = library
+        self.condition = condition
+
+
 class City:
     def __init__(self):
         self.name = ""
 
 if __name__ == '__main__':
-    janek = Person("Janek", "Borowski",
+    janek = Person("JanBor321","Janek", "Borowski",
                    ContactData(953123456, "email@gmail.com"),
                    AddressData("Mazowieckie", "Warszawa", "Przykładowa", "43", "10", 50.21, 50.30))
     print(janek.name, janek.surname)
