@@ -18,6 +18,9 @@ def logOut(window):
     appState = availableStates[1]
     window.destroy()
 
+def resetPassword(window):
+    tk.messagebox.showwarning(title="Warning!", message="You currently cannot reset passwords.\nPlease contact an administrator.",)
+
 def loginWindow():
     global appState
     appState = availableStates[0]
@@ -27,9 +30,6 @@ def loginWindow():
 
     frame_formularz = tk.Frame(root_log)
     frame_formularz.pack(pady=50)
-
-    button_login = tk.Button(root_log, text="Login", command=lambda: logIn(root_log))
-    button_login.pack()
 
     label_Username = tk.Label(frame_formularz, text="Username: ")
     label_Username.grid(row=0,column=0)
@@ -41,6 +41,14 @@ def loginWindow():
     entry_Password = tk.Entry(frame_formularz)
     entry_Password.grid(row=1, column=1)
 
+    button_login = tk.Button(frame_formularz, text="Login", command=lambda: logIn(root_log))
+    button_login.grid(row=2, column=0)
+
+    button_resetPassword = tk.Button(frame_formularz, text="Reset Password", command=lambda: resetPassword(root_log))
+    button_resetPassword.grid(row=2, column=1)
+
+    #button_register = tk.Button(frame_formularz, text="Register", command=lambda: registerUser(root_log))
+    #button_register.grid(row=2, column=2)
 
     root_log.mainloop()
 
