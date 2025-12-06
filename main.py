@@ -3,20 +3,30 @@ import tkintermapview
 from libmap import controller as ctrl
 from libmap import model
 
-availableStates = ("Disable","Login", "Map")
+availableStates = ("Disable","Login", "Register", "Map")
 appState = availableStates[1]
 
 
 
-def logIn(window):
-    global appState
-    appState = availableStates[2]
-    window.destroy()
+
 
 def logOut(window):
     global appState
     appState = availableStates[1]
     window.destroy()
+
+def register(window):
+    global appState
+    appState = availableStates[2]
+    window.destroy()
+
+def logIn(window):
+    global appState
+    appState = availableStates[3]
+    window.destroy()
+
+def registerUser(username, email, password):
+    return
 
 def resetPassword(window):
     tk.messagebox.showwarning(title="Warning!", message="You currently cannot reset passwords.\nPlease contact an administrator.",)
@@ -42,16 +52,90 @@ def loginWindow():
     entry_Password.grid(row=1, column=1)
 
     button_login = tk.Button(frame_formularz, text="Login", command=lambda: logIn(root_log))
-    button_login.grid(row=2, column=0)
+    button_login.grid(row=2, column=1, sticky="WE")
 
     button_resetPassword = tk.Button(frame_formularz, text="Reset Password", command=lambda: resetPassword(root_log))
-    button_resetPassword.grid(row=2, column=1)
+    button_resetPassword.grid(row=2, column=0, sticky="WE")
 
-    #button_register = tk.Button(frame_formularz, text="Register", command=lambda: registerUser(root_log))
-    #button_register.grid(row=2, column=2)
+    button_register = tk.Button(frame_formularz, text="Register", command=lambda: register(root_log))
+    button_register.grid(row=2, column=2, sticky="WE")
 
     root_log.mainloop()
 
+def registerWindow():
+    global appState
+    appState = availableStates[0]
+    root_register = tk.Tk()
+    root_register.title("Okno rejestracji")
+    root_register.geometry("400x400")
+
+    frame_registry = tk.Frame(root_register)
+    frame_registry.pack(pady=30)
+
+    label_registry = tk.Label(frame_registry, text="Formularz rejestracji")
+    label_registry.grid(row=0, column=0, columnspan=2)
+
+    label_Username = tk.Label(frame_registry, text="Username: ")
+    label_Username.grid(row=1, column=0, sticky=tk.W)
+    entry_Username = tk.Entry(frame_registry)
+    entry_Username.grid(row=1, column=1)
+
+    label_email = tk.Label(frame_registry, text="Email: ")
+    label_email.grid(row=2, column=0, sticky=tk.W)
+    entry_email = tk.Entry(frame_registry)
+    entry_email.grid(row=2, column=1)
+
+    label_password = tk.Label(frame_registry, text="Password: ")
+    label_password.grid(row=3, column=0, sticky=tk.W)
+    entry_password = tk.Entry(frame_registry)
+    entry_password.grid(row=3, column=1)
+
+    label_confirm_password = tk.Label(frame_registry, text="Confirm Password: ")
+    label_confirm_password.grid(row=4, column=0, sticky=tk.W)
+    entry_confirm_password = tk.Entry(frame_registry)
+    entry_confirm_password.grid(row=4, column=1)
+
+    label_optional = tk.Label(frame_registry,text="Optional")
+    label_optional.grid(row=5, column=0, columnspan=2,pady=10)
+
+    label_phonenumber= tk.Label(frame_registry, text="Phone Number: ")
+    label_phonenumber.grid(row=6, column=0, sticky=tk.W)
+    entry_phonenumber= tk.Entry(frame_registry)
+    entry_phonenumber.grid(row=6, column=1)
+
+    label_voivoideship = tk.Label(frame_registry, text="Voivoideship: ")
+    label_voivoideship.grid(row=7, column=0, sticky=tk.W)
+    voivoideships = ["dolnośląskie","kujawsko-pomorskie","lubelskie","lubuskie","łódzkie","małopolskie","mazowieckie","opolskie","podkarpackie","podlaskie","pomorskie","śląskie","świętokrzyskie","warmińsko-mazurskie","wielkopolskie","zachodniopomorskie"]
+    selected_voivoideship= tk.StringVar(value="Województwo")
+    entry_voivoideship = tk.OptionMenu(frame_registry, selected_voivoideship, *voivoideships)
+    entry_voivoideship.grid(row=7, column=0, sticky=tk.E, columnspan=2)
+
+    label_city = tk.Label(frame_registry, text="City: ")
+    label_city.grid(row=8, column=0, sticky=tk.W)
+    entry_city = tk.Entry(frame_registry)
+    entry_city.grid(row=8, column=1)
+
+    label_street = tk.Label(frame_registry, text="Street: ")
+    label_street.grid(row=9, column=0, sticky=tk.W)
+    entry_street = tk.Entry(frame_registry)
+    entry_street.grid(row=9, column=1)
+
+    label_building = tk.Label(frame_registry, text="Building: ")
+    label_building.grid(row=10, column=0, sticky=tk.W)
+    entry_building = tk.Entry(frame_registry)
+    entry_building.grid(row=10, column=1)
+
+    label_apartment = tk.Label(frame_registry, text="Apartment: ")
+    label_apartment.grid(row=11, column=0, sticky=tk.W)
+    entry_apartment = tk.Entry(frame_registry)
+    entry_apartment.grid(row=11, column=1)
+
+    button_cancel = tk.Button(frame_registry, text="Cancel", command=lambda: logOut(root_register))
+    button_cancel.grid(row=12,column=0,sticky="WE",pady=10)
+    button_register = tk.Button(frame_registry, text="Register", command=lambda: registerUser(entry_Username,entry_email,entry_password))
+    button_register.grid(row=12,column=1, sticky="WE",pady=10)
+
+    root_register.mainloop()
 
 def mapWindow():
     global appState
@@ -70,5 +154,7 @@ while appState != availableStates[0]:
     if appState == availableStates[1]:
         loginWindow()
     elif appState == availableStates[2]:
+        registerWindow()
+    elif appState == availableStates[3]:
         mapWindow()
 
