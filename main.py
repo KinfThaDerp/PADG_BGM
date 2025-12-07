@@ -35,7 +35,7 @@ def loginWindow():
     global appState
     appState = availableStates[0]
     root_log = tk.Tk()
-    root_log.title("Okno Logowania")
+    root_log.title("Mapbook - Login")
     root_log.geometry("300x300")
 
     frame_formularz = tk.Frame(root_log)
@@ -66,13 +66,13 @@ def registerWindow():
     global appState
     appState = availableStates[0]
     root_register = tk.Tk()
-    root_register.title("Okno rejestracji")
+    root_register.title("Mapbook - Register")
     root_register.geometry("400x400")
 
     frame_registry = tk.Frame(root_register)
     frame_registry.pack(pady=30)
 
-    label_registry = tk.Label(frame_registry, text="Formularz rejestracji")
+    label_registry = tk.Label(frame_registry, text="Registry Form")
     label_registry.grid(row=0, column=0, columnspan=2)
 
     label_Username = tk.Label(frame_registry, text="Username: ")
@@ -106,7 +106,7 @@ def registerWindow():
     label_voivoideship = tk.Label(frame_registry, text="Voivoideship: ")
     label_voivoideship.grid(row=7, column=0, sticky=tk.W)
     voivoideships = ["dolnośląskie","kujawsko-pomorskie","lubelskie","lubuskie","łódzkie","małopolskie","mazowieckie","opolskie","podkarpackie","podlaskie","pomorskie","śląskie","świętokrzyskie","warmińsko-mazurskie","wielkopolskie","zachodniopomorskie"]
-    selected_voivoideship= tk.StringVar(value="Województwo")
+    selected_voivoideship= tk.StringVar(value="Select")
     entry_voivoideship = tk.OptionMenu(frame_registry, selected_voivoideship, *voivoideships)
     entry_voivoideship.grid(row=7, column=0, sticky=tk.E, columnspan=2)
 
@@ -141,7 +141,7 @@ def mapWindow():
     global appState
     appState = availableStates[0]
     root_map = tk.Tk()
-    root_map.title("Okno Map")
+    root_map.title("Mapbook")
     root_map.geometry("1280x720")
 
     button_logot = tk.Button(root_map, text="Log out", command=lambda: logOut(root_map))
