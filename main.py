@@ -1,8 +1,7 @@
 import tkinter as tk
 import tkintermapview
 from libmap import controller as ctrl
-from libmap import model
-
+from libmap.model import voivoideships
 availableStates = ("Disable","Login", "Register", "Map")
 appState = availableStates[1]
 
@@ -105,7 +104,7 @@ def registerWindow():
 
     label_voivoideship = tk.Label(frame_registry, text="Voivoideship: ")
     label_voivoideship.grid(row=7, column=0, sticky=tk.W)
-    voivoideships = ["dolnośląskie","kujawsko-pomorskie","lubelskie","lubuskie","łódzkie","małopolskie","mazowieckie","opolskie","podkarpackie","podlaskie","pomorskie","śląskie","świętokrzyskie","warmińsko-mazurskie","wielkopolskie","zachodniopomorskie"]
+    global voivoideships
     selected_voivoideship= tk.StringVar(value="Select")
     entry_voivoideship = tk.OptionMenu(frame_registry, selected_voivoideship, *voivoideships)
     entry_voivoideship.grid(row=7, column=0, sticky=tk.E, columnspan=2)

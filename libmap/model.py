@@ -1,5 +1,10 @@
 import re
 
+voivoideships = ("dolnośląskie", "kujawsko-pomorskie", "lubelskie", "lubuskie", "łódzkie", "małopolskie", "mazowieckie",
+                 "opolskie", "podkarpackie", "podlaskie", "pomorskie", "śląskie", "świętokrzyskie",
+                 "warmińsko-mazurskie", "wielkopolskie", "zachodniopomorskie")
+
+
 class ContactData:
     def __init__(self, number:int, email:str):
         self.phoneNumber = number
