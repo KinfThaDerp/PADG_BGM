@@ -52,6 +52,14 @@ class Book:
         self.isbn = isbn
         self.publisher = publisher
         self.genre = genre
+    def getData(self):
+        return {
+            "title": self.title,
+            "author": self.author,
+            "isbn": self.isbn,
+            "publisher": self.publisher,
+            "genre": self.genre
+        }
 
 class Person:
     def __init__(self, username:str, name:str, surname:str, contact:ContactData, address:AddressData):
@@ -60,12 +68,26 @@ class Person:
         self.surname = surname
         self.contact = contact
         self.address = address
+    def getData(self):
+        return {
+            "username": self.username,
+            "name": self.name,
+            "surname": self.surname,
+            "contact": self.contact.getData(),
+            "address": self.address.getData()
+        }
 
 class Library:
     def __init__(self, name:str, address:AddressData, contact:ContactData):
         self.name = name
         self.address = address
         self.contact = contact
+    def getData(self):
+        return {
+            "name": self.name,
+            "address": self.address.getData(),
+            "contact": self.contact.getData()
+        }
 
 class BookCopy:
     def __init__(self, book:Book, barcode:int, library:Library, condition):
@@ -73,6 +95,13 @@ class BookCopy:
         self.barcode = barcode
         self.library = library
         self.condition = condition
+    def getData(self):
+        return {
+            "book": self.book.getData(),
+            "barcode": self.barcode,
+            "library": self.library.getData(),
+            "condition": self.condition
+        }
 
 
 class City:
@@ -83,6 +112,4 @@ if __name__ == '__main__':
     janek = Person("JanBor321","Janek", "Borowski",
                    ContactData(953123456, "email@gmail.com"),
                    AddressData("Mazowieckie", "Warszawa", "Przykładowa", "43", "10", 50.21, 50.30))
-    print(janek.name, janek.surname)
-    print(janek.contact.getData())
-    print(janek.address.getData())
+    print(janek.getData())
