@@ -26,18 +26,21 @@ class ContactData:
             "phoneNumber": self.phoneNumber,
             "email": self.email
         }
+class City:
+    def __init__(self, name, voivodeship:str):
+        self.name = name
+        self.voivodeship = voivodeship
 
 class AddressData:
-    def __init__(self, voivodeshipName, cityName:str, streetName:str, buildingNumber:str, apartmentNumber:str, latitude:float, longitude:float):
-        self.voivodeship = voivodeshipName
-        self.city = cityName
+    def __init__(self, city:City, streetName:str, buildingNumber:str, apartmentNumber:str, latitude:float, longitude:float):
+        self.city = city
         self.street = streetName
         self.building = buildingNumber
         self.apartment = apartmentNumber
         self.coords = [latitude, longitude]
     def getData(self):
         return {
-            "voivodeship": self.voivodeship,
+            "voivodeship": self.city.voivodeship,
             "city": self.city,
             "street": self.street,
             "building": self.building,
@@ -104,12 +107,9 @@ class BookCopy:
         }
 
 
-class City:
-    def __init__(self):
-        self.name = ""
-
 if __name__ == '__main__':
-    janek = Person("JanBor321","Janek", "Borowski",
-                   ContactData(953123456, "email@gmail.com"),
-                   AddressData("Mazowieckie", "Warszawa", "Przykładowa", "43", "10", 50.21, 50.30))
-    print(janek.getData())
+    # janek = Person("JanBor321","Janek", "Borowski",
+    #                ContactData(953123456, "email@gmail.com"),
+    #                AddressData("Mazowieckie", "Warszawa", "Przykładowa", "43", "10", 50.21, 50.30))
+    # print(janek.getData())
+    City("Warszawa", "Mazowsze")
