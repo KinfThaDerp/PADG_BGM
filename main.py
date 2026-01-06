@@ -139,14 +139,27 @@ def registerWindow():
 def mapWindow():
     global appState
     appState = availableStates[0]
+
     root_map = tk.Tk()
     root_map.title("Mapbook")
     root_map.geometry("1280x720")
 
-    button_logot = tk.Button(root_map, text="Log out", command=lambda: logOut(root_map))
-    button_logot.pack()
+    root_map.grid_columnconfigure(0, weight=1)
+    root_map.grid_rowconfigure(1, weight=1)
+
+    button_logout = tk.Button(
+        root_map,
+        text="Log out",
+        command=lambda: logOut(root_map))
+    button_logout.grid(row=0, column=0, sticky="e", padx=10, pady=5)
+
+    map_widget = tkintermapview.TkinterMapView(root_map)
+    map_widget.grid(row=1, column=0, sticky="nsew")
+    map_widget.set_position(52.229722, 21.011667 )
+    map_widget.set_zoom(6)
 
     root_map.mainloop()
+
 
 
 while appState != availableStates[0]:
