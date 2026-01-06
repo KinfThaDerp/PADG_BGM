@@ -1,4 +1,6 @@
 import tkinter as tk
+from tkinter import Frame
+
 import tkintermapview
 from libmap import controller as ctrl
 from libmap.model import voivoideships
@@ -147,8 +149,12 @@ def mapWindow():
     root_map.grid_columnconfigure(0, weight=1)
     root_map.grid_rowconfigure(1, weight=1)
 
+    toolbar_frame = Frame(root_map)
+    toolbar_frame.grid(row=0,column=0, sticky="EW")
+    toolbar_frame.grid_columnconfigure(0, weight=1)
+
     button_logout = tk.Button(
-        root_map,
+        toolbar_frame,
         text="Log out",
         command=lambda: logOut(root_map))
     button_logout.grid(row=0, column=0, sticky="e", padx=10, pady=5)
