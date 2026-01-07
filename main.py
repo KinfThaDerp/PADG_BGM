@@ -26,7 +26,8 @@ def register(window):
 def logIn(window):
     changeAppState(window, 3)
 
-def registerUser(username, email, password):
+def registerUser(username, email, password, **kwargs):
+
     return
 
 def resetPassword(window):

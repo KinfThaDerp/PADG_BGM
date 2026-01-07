@@ -29,6 +29,22 @@ CREATE TABLE address (
     coords real[2]
 );
 
+CREATE TABLE account (
+    id serial primary key,
+    username text NOT NULL UNIQUE,
+    password text NOT NULL,
+    email text NOT NULL
+);
+
+CREATE TABLE person (
+    id serial PRIMARY KEY,
+    account INT REFERENCES contact(id) ON DELETE SET NULL UNIQUE,
+    name text NOT NULL,
+    surname text NOT NULL,
+    contact INT REFERENCES contact(id) ON DELETE SET NULL UNIQUE,
+    address INT REFERENCES address(id) ON DELETE SET NULL UNIQUE
+);
+
 
 CREATE TABLE book (
     id serial PRIMARY KEY,
@@ -53,6 +69,9 @@ CREATE TABLE book_copy (
     library INT REFERENCES library(id) ON DELETE SET NULL,
     condition text
 )
+
+
+
 
 -- Join Table
 

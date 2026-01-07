@@ -64,16 +64,22 @@ class Book:
             "genre": self.genre
         }
 
-class Person:
-    def __init__(self, username:str, name:str, surname:str, contact:ContactData, address:AddressData):
+class account:
+    def __init__(self, username:str, email:str, password:str):
         self.username = username
+        self.email = email
+        self.password = password
+
+class Person:
+    def __init__(self, account:account, name:str, surname:str, contact:ContactData, address:AddressData):
+        self.account = account
         self.name = name
         self.surname = surname
         self.contact = contact
         self.address = address
     def getData(self):
         return {
-            "username": self.username,
+            "account": self.account,
             "name": self.name,
             "surname": self.surname,
             "contact": self.contact.getData(),
@@ -108,8 +114,9 @@ class BookCopy:
 
 
 if __name__ == '__main__':
+    print("Running")
     # janek = Person("JanBor321","Janek", "Borowski",
     #                ContactData(953123456, "email@gmail.com"),
     #                AddressData("Mazowieckie", "Warszawa", "Przykładowa", "43", "10", 50.21, 50.30))
     # print(janek.getData())
-    City("Warszawa", "Mazowsze")
+    # City("Warszawa", "Mazowsze")
