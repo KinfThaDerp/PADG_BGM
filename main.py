@@ -4,27 +4,27 @@ from tkinter import Frame
 import tkintermapview
 from libmap import controller as ctrl
 from libmap.model import voivoideships
+
 availableStates = ("Disable","Login", "Register", "Map")
 appState = availableStates[1]
 
-
-
-
+def changeAppState(window, state:int):
+    global appState
+    if 0<=state<=len(availableStates):
+        appState = availableStates[state]
+        window.destroy()
+    else:
+        raise Exception("Failed to change App State!")
 
 def logOut(window):
-    global appState
-    appState = availableStates[1]
-    window.destroy()
+    changeAppState(window, 1)
+
 
 def register(window):
-    global appState
-    appState = availableStates[2]
-    window.destroy()
+    changeAppState(window, 2)
 
 def logIn(window):
-    global appState
-    appState = availableStates[3]
-    window.destroy()
+    changeAppState(window, 3)
 
 def registerUser(username, email, password):
     return
@@ -49,7 +49,7 @@ def loginWindow():
 
     label_Password = tk.Label(frame_formularz, text="Password: ")
     label_Password.grid(row=1, column=0)
-    entry_Password = tk.Entry(frame_formularz)
+    entry_Password = tk.Entry(frame_formularz, show="*")
     entry_Password.grid(row=1, column=1)
 
     button_login = tk.Button(frame_formularz, text="Login", command=lambda: logIn(root_log))
@@ -62,6 +62,7 @@ def loginWindow():
     button_register.grid(row=2, column=2, sticky="WE")
 
     root_log.mainloop()
+    print()
 
 def registerWindow():
     global appState
@@ -88,12 +89,12 @@ def registerWindow():
 
     label_password = tk.Label(frame_registry, text="Password: ")
     label_password.grid(row=3, column=0, sticky=tk.W)
-    entry_password = tk.Entry(frame_registry)
+    entry_password = tk.Entry(frame_registry, show="*")
     entry_password.grid(row=3, column=1)
 
     label_confirm_password = tk.Label(frame_registry, text="Confirm Password: ")
     label_confirm_password.grid(row=4, column=0, sticky=tk.W)
-    entry_confirm_password = tk.Entry(frame_registry)
+    entry_confirm_password = tk.Entry(frame_registry, show="*")
     entry_confirm_password.grid(row=4, column=1)
 
     label_optional = tk.Label(frame_registry,text="Optional")
