@@ -1,9 +1,13 @@
 import re
 
+# ─── Hardcoded ───────────────────────────────────────────────────────────────
+
+
 voivoideships = ("dolnośląskie", "kujawsko-pomorskie", "lubelskie", "lubuskie", "łódzkie", "małopolskie", "mazowieckie",
                  "opolskie", "podkarpackie", "podlaskie", "pomorskie", "śląskie", "świętokrzyskie",
                  "warmińsko-mazurskie", "wielkopolskie", "zachodniopomorskie")
 
+# ─── Classes ───────────────────────────────────────────────────────────────
 
 class ContactData:
     def __init__(self, number:int, email:str):

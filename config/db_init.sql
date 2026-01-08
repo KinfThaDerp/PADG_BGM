@@ -32,8 +32,9 @@ CREATE TABLE address (
 CREATE TABLE account (
     id serial primary key,
     username text NOT NULL UNIQUE,
-    password text NOT NULL,
-    email text NOT NULL
+    email text NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE person (
