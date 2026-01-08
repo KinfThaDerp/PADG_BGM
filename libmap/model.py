@@ -12,28 +12,35 @@ voivoideships = ("dolnośląskie", "kujawsko-pomorskie", "lubelskie", "lubuskie"
 class ContactData:
     def __init__(self, number:int, email:str):
         self.phoneNumber = number
-        self.checkValidNumber()
+        self.check_valid_number()
         self.email = email
-        self.checkValidEmail()
-    def checkValidNumber(self):
+        self.check_valid_email()
+    def check_valid_number(self):
         if (len(str(self.phoneNumber)) == 9) and isinstance(self.phoneNumber, int):
             return True
         else:
             raise Exception("Invalid Phone Number!")
-    def checkValidEmail(self):
+    def check_valid_email(self):
         if isinstance(self.email, str) and re.match(r"[^@]+@[^@]+\.[^@]+", self.email):
             return self.email
         else:
             raise Exception("Invalid Email!")
-    def getData(self):
+    def get_data(self):
         return {
             "phoneNumber": self.phoneNumber,
             "email": self.email
         }
+
+
 class City:
     def __init__(self, name, voivodeship:str):
         self.name = name
         self.voivodeship = voivodeship
+    def get_data(self):
+        return {
+        "name": self.name,
+        "voivodeship": self.voivodeship
+        }
 
 class AddressData:
     def __init__(self, city:City, streetName:str, buildingNumber:str, apartmentNumber:str, latitude:float, longitude:float):
@@ -42,7 +49,7 @@ class AddressData:
         self.building = buildingNumber
         self.apartment = apartmentNumber
         self.coords = [latitude, longitude]
-    def getData(self):
+    def get_data(self):
         return {
             "voivodeship": self.city.voivodeship,
             "city": self.city,
@@ -59,7 +66,7 @@ class Book:
         self.isbn = isbn
         self.publisher = publisher
         self.genre = genre
-    def getData(self):
+    def get_data(self):
         return {
             "title": self.title,
             "author": self.author,
@@ -68,11 +75,15 @@ class Book:
             "genre": self.genre
         }
 
-class account:
+class Account:
     def __init__(self, username:str, email:str, password:str):
         self.username = username
         self.email = email
-        self.password = password
+    def get_data(self):
+        return {
+        "username": self.username,
+        "email": self.email,
+        }
 
 class Person:
     def __init__(self, account:account, name:str, surname:str, contact:ContactData, address:AddressData):
@@ -81,13 +92,13 @@ class Person:
         self.surname = surname
         self.contact = contact
         self.address = address
-    def getData(self):
+    def get_data(self):
         return {
             "account": self.account,
             "name": self.name,
             "surname": self.surname,
-            "contact": self.contact.getData(),
-            "address": self.address.getData()
+            "contact": self.contact.get_data(),
+            "address": self.address.get_data()
         }
 
 class Library:
@@ -95,11 +106,11 @@ class Library:
         self.name = name
         self.address = address
         self.contact = contact
-    def getData(self):
+    def get_data(self):
         return {
             "name": self.name,
-            "address": self.address.getData(),
-            "contact": self.contact.getData()
+            "address": self.address.get_data(),
+            "contact": self.contact.get_data()
         }
 
 class BookCopy:
@@ -108,11 +119,11 @@ class BookCopy:
         self.barcode = barcode
         self.library = library
         self.condition = condition
-    def getData(self):
+    def get_data(self):
         return {
-            "book": self.book.getData(),
+            "book": self.book.get_data(),
             "barcode": self.barcode,
-            "library": self.library.getData(),
+            "library": self.library.get_data(),
             "condition": self.condition
         }
 

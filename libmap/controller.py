@@ -40,7 +40,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
 
 # ─── Database helpers ─────────────────────────────────────────────────────────
 
-def does_account_username_exist(username: str) -> bool:
+def does_account_with_username_exist(username: str) -> bool:
     query = """
         SELECT 1
         FROM account
@@ -51,7 +51,7 @@ def does_account_username_exist(username: str) -> bool:
     return cursor.fetchone() is not None
 
 
-def does_account_email_exist(email: str) -> bool:
+def does_account_with_email_exist(email: str) -> bool:
     query = """
         SELECT 1
         FROM account
@@ -93,10 +93,10 @@ def register_account(
     if password != confirm_password:
         return False, "Passwords do not match."
 
-    if does_account_username_exist(username):
+    if does_account_with_username_exist(username):
         return False, "Username already taken."
 
-    if does_account_email_exist(email):
+    if does_account_with_email_exist(email):
         return False, "Email already registered."
 
     push_account_to_db(username, email, password)
@@ -107,11 +107,9 @@ def login_account(username: str, password: str) -> tuple[bool, str]:
     if not username or not password:
         return False, "Required fields are missing."
 
-    # Check if username exists
-    if not does_account_username_exist(username):
+    if not does_account_with_username_exist(username):
         return False, "User doesn't exist."
 
-    # Fetch password hash
     query = """
         SELECT password_hash
         FROM account
@@ -122,7 +120,6 @@ def login_account(username: str, password: str) -> tuple[bool, str]:
     result = cursor.fetchone()
     stored_password_hash = result[0]
 
-    # Verify password using bcrypt
     if not verify_password(password, stored_password_hash):
         return False, "Incorrect password."
 

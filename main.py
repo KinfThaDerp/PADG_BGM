@@ -5,26 +5,29 @@ import tkintermapview
 from libmap import controller as ctrl
 from libmap.model import voivoideships
 
-availableStates = ("Disable","Login", "Register", "Map")
-appState = availableStates[1]
+# ─── Window Directions ─────────────────────────────────────────────────────────
 
-def changeAppState(window, state:int):
-    global appState
-    if 0<=state<=len(availableStates):
-        appState = availableStates[state]
+available_states = ("Disable", "Login", "Register", "Map")
+app_state = available_states[1]
+
+def change_app_state(window, state:int):
+    global app_state
+    if 0<=state<=len(available_states):
+        app_state = available_states[state]
         window.destroy()
     else:
         raise Exception("Failed to change App State!")
 
-def goToLogin(window):
-    changeAppState(window, 1)
-def goToRegistry(window):
-    changeAppState(window, 2)
-def goToMap(window):
-    changeAppState(window, 3)
+def go_to_login(window):
+    change_app_state(window, 1)
+def go_to_registry(window):
+    change_app_state(window, 2)
+def go_to_map(window):
+    change_app_state(window, 3)
 
+# ─── Account Handlers ─────────────────────────────────────────────────────────
 
-def resetPassword():
+def reset_password():
     tk.messagebox.showwarning(title="Warning!", message="You currently cannot reset passwords.\nPlease contact an administrator.",)
 
 
@@ -46,7 +49,7 @@ def handle_register(root, **entries):
 
     if success:
         tk.messagebox.showinfo("Success", message)
-        goToLogin(root)
+        go_to_login(root)
     else:
         tk.messagebox.showerror("Error", message)
 
@@ -58,15 +61,15 @@ def handle_login(root, **entries):
 
     if success:
         tk.messagebox.showinfo("Success", message)
-        goToMap(root)
+        go_to_map(root)
     else:
         tk.messagebox.showerror("Error", message)
 
 # ─── Windows ───────────────────────────────────────────────────────────────
 
-def loginWindow():
-    global appState
-    appState = availableStates[0]
+def login_window():
+    global app_state
+    app_state = available_states[0]
     root_log = tk.Tk()
     root_log.title("Mapbook - Login")
     root_log.geometry("300x300")
@@ -74,37 +77,37 @@ def loginWindow():
     frame_formularz = tk.Frame(root_log)
     frame_formularz.pack(pady=50)
 
-    label_Username = tk.Label(frame_formularz, text="Username: ")
-    label_Username.grid(row=0,column=0)
-    entry_Username = tk.Entry(frame_formularz)
-    entry_Username.grid(row=0, column=1)
+    label_username = tk.Label(frame_formularz, text="Username: ")
+    label_username.grid(row=0,column=0)
+    entry_username = tk.Entry(frame_formularz)
+    entry_username.grid(row=0, column=1)
 
-    label_Password = tk.Label(frame_formularz, text="Password: ")
-    label_Password.grid(row=1, column=0)
-    entry_Password = tk.Entry(frame_formularz, show="*")
-    entry_Password.grid(row=1, column=1)
+    label_password = tk.Label(frame_formularz, text="Password: ")
+    label_password.grid(row=1, column=0)
+    entry_password = tk.Entry(frame_formularz, show="*")
+    entry_password.grid(row=1, column=1)
 
     button_login = tk.Button(frame_formularz,
                              text="Login",
                              command=lambda: handle_login(
                                  root_log,
-                                 username=entry_Username,
-                                 password=entry_Password
+                                 username=entry_username,
+                                 password=entry_password
                              ))
     button_login.grid(row=2, column=1, sticky="WE")
 
-    button_resetPassword = tk.Button(frame_formularz, text="Reset Password", command=lambda: resetPassword(root_log))
-    button_resetPassword.grid(row=2, column=0, sticky="WE")
+    button_reset_password = tk.Button(frame_formularz, text="Reset Password", command=lambda: reset_password())
+    button_reset_password.grid(row=2, column=0, sticky="WE")
 
-    button_register = tk.Button(frame_formularz, text="Register", command=lambda: goToRegistry(root_log))
+    button_register = tk.Button(frame_formularz, text="Register", command=lambda: go_to_registry(root_log))
     button_register.grid(row=2, column=2, sticky="WE")
 
     root_log.mainloop()
     print()
 
-def registerWindow():
-    global appState
-    appState = availableStates[0]
+def register_window():
+    global app_state
+    app_state = available_states[0]
     root_register = tk.Tk()
     root_register.title("Mapbook - Register")
     root_register.geometry("400x400")
@@ -115,10 +118,10 @@ def registerWindow():
     label_registry = tk.Label(frame_registry, text="Registry Form")
     label_registry.grid(row=0, column=0, columnspan=2)
 
-    label_Username = tk.Label(frame_registry, text="Username: ")
-    label_Username.grid(row=1, column=0, sticky=tk.W)
-    entry_Username = tk.Entry(frame_registry)
-    entry_Username.grid(row=1, column=1)
+    label_username = tk.Label(frame_registry, text="Username: ")
+    label_username.grid(row=1, column=0, sticky=tk.W)
+    entry_username = tk.Entry(frame_registry)
+    entry_username.grid(row=1, column=1)
 
     label_email = tk.Label(frame_registry, text="Email: ")
     label_email.grid(row=2, column=0, sticky=tk.W)
@@ -170,13 +173,13 @@ def registerWindow():
     entry_apartment = tk.Entry(frame_registry)
     entry_apartment.grid(row=11, column=1)
 
-    button_cancel = tk.Button(frame_registry, text="Cancel", command=lambda: goToLogin(root_register))
+    button_cancel = tk.Button(frame_registry, text="Cancel", command=lambda: go_to_login(root_register))
     button_cancel.grid(row=12,column=0,sticky="WE",pady=10)
     button_register = tk.Button(frame_registry,
                                 text="Register",
                                 command=lambda: handle_register(
                                     root_register,
-                                    username=entry_Username,
+                                    username=entry_username,
                                     email=entry_email,
                                     password=entry_password,
                                     confirm_password=entry_confirm_password,
@@ -192,9 +195,9 @@ def registerWindow():
 
     root_register.mainloop()
 
-def mapWindow():
-    global appState
-    appState = availableStates[0]
+def map_window():
+    global app_state
+    app_state = available_states[0]
 
     root_map = tk.Tk()
     root_map.title("Mapbook")
@@ -210,7 +213,7 @@ def mapWindow():
     button_logout = tk.Button(
         toolbar_frame,
         text="Log out",
-        command=lambda: goToLogin(root_map))
+        command=lambda: go_to_login(root_map))
     button_logout.grid(row=0, column=0, sticky="e", padx=10, pady=5)
 
     map_widget = tkintermapview.TkinterMapView(root_map)
@@ -222,11 +225,11 @@ def mapWindow():
 
 
 
-while appState != availableStates[0]:
-    if appState == availableStates[1]:
-        loginWindow()
-    elif appState == availableStates[2]:
-        registerWindow()
-    elif appState == availableStates[3]:
-        mapWindow()
+while app_state != available_states[0]:
+    if app_state == available_states[1]:
+        login_window()
+    elif app_state == available_states[2]:
+        register_window()
+    elif app_state == available_states[3]:
+        map_window()
 
