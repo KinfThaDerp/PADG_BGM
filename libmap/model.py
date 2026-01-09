@@ -1,7 +1,8 @@
 import re
 
-# ─── Hardcoded ───────────────────────────────────────────────────────────────
+# ─── Stuff ───────────────────────────────────────────────────────────────
 
+people_list:list = []
 
 voivoideships = ("dolnośląskie", "kujawsko-pomorskie", "lubelskie", "lubuskie", "łódzkie", "małopolskie", "mazowieckie",
                  "opolskie", "podkarpackie", "podlaskie", "pomorskie", "śląskie", "świętokrzyskie",
@@ -86,7 +87,7 @@ class Account:
         }
 
 class Person:
-    def __init__(self, account:account, name:str, surname:str, contact:ContactData, address:AddressData):
+    def __init__(self, account:Account, name:str, surname:str, contact:ContactData, address:AddressData):
         self.account = account
         self.name = name
         self.surname = surname
@@ -126,6 +127,7 @@ class BookCopy:
             "library": self.library.get_data(),
             "condition": self.condition
         }
+
 
 
 if __name__ == '__main__':

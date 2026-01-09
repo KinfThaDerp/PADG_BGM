@@ -3,6 +3,7 @@ import re
 import bcrypt
 import psycopg2
 from dotenv import load_dotenv
+import libmap.model as model
 
 load_dotenv(verbose=True)
 
@@ -26,7 +27,7 @@ def is_valid_email(email: str) -> bool:
     return bool(EMAIL_REGEX.fullmatch(email))
 
 
-# ─── Password helpers ─────────────────────────────────────────────────────────
+# ─── Password Hashing ─────────────────────────────────────────────────────────
 
 def hash_password(password: str) -> str:
     # bcrypt automatically generates a salt and stores it in the hash
@@ -36,7 +37,6 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, stored_hash: str) -> bool:
     # bcrypt handles the salt automatically when verifying
     return bcrypt.checkpw(password.encode(), stored_hash.encode())
-
 
 # ─── Database helpers ─────────────────────────────────────────────────────────
 
@@ -73,6 +73,16 @@ def push_account_to_db(username: str, email: str, password: str) -> None:
     cursor.execute(query, (username, email, password_hash))
     connection.commit()
 
+def fetch_people() -> list:
+    query = """
+        SELECT * FROM person;
+    """
+    cursor.execute(query)
+    people = cursor.fetchall()
+    new_people = []
+    for person in people:
+        new_people.append([person[2],person[3]])
+    return new_people
 
 # ─── Logic ───────────────────────────────────────────────────────────────
 
@@ -103,7 +113,10 @@ def register_account(
     return True, "User registered successfully."
 
 
-def login_account(username: str, password: str) -> tuple[bool, str]:
+def login_account(
+        username: str,
+        password: str
+) -> tuple[bool, str]:
     if not username or not password:
         return False, "Required fields are missing."
 
@@ -126,10 +139,11 @@ def login_account(username: str, password: str) -> tuple[bool, str]:
     return True, "Login successful."
 
 if __name__ == "__main__":
-    ok, msg = register_account(
-        "KinfThaDerp",
-        "bassam.grzegorz@gmail.com",
-        "xd987654",
-        "xd987654"
-    )
-    print(ok, msg)
+    # ok, msg = register_account(
+    #     "KinfThaDerp",
+    #     "bassam.grzegorz@gmail.com",
+    #     "xd987654",
+    #     "xd987654"
+    # )
+    # print(ok, msg)
+    print(fetch_people())

@@ -5,7 +5,7 @@ import tkintermapview
 from libmap import controller as ctrl
 from libmap.model import voivoideships
 
-# ─── Window Directions ─────────────────────────────────────────────────────────
+# ─── Window Directors ─────────────────────────────────────────────────────────
 
 available_states = ("Disable", "Login", "Register", "Map")
 app_state = available_states[1]
@@ -60,7 +60,7 @@ def handle_login(root, **entries):
     )
 
     if success:
-        tk.messagebox.showinfo("Success", message)
+        #tk.messagebox.showinfo("Success", message)
         go_to_map(root)
     else:
         tk.messagebox.showerror("Error", message)
@@ -195,6 +195,7 @@ def register_window():
 
     root_register.mainloop()
 
+
 def map_window():
     global app_state
     app_state = available_states[0]
@@ -203,25 +204,74 @@ def map_window():
     root_map.title("Mapbook")
     root_map.geometry("1280x720")
 
-    root_map.grid_columnconfigure(0, weight=1)
+    root_map.grid_columnconfigure(1, weight=1)
     root_map.grid_rowconfigure(1, weight=1)
 
     toolbar_frame = Frame(root_map)
-    toolbar_frame.grid(row=0,column=0, sticky="EW")
-    toolbar_frame.grid_columnconfigure(0, weight=1)
+    toolbar_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
+    toolbar_frame.grid_columnconfigure(1, weight=1)
+
+    sidebar = LeftToolbar(root_map)
+
+    sidebar.create_list(
+        ctrl.fetch_people()
+    )
+
+    sidebar.add_button("Add Book", command=lambda: print("Add Book"))
+
+    toggle_button = tk.Button(
+        toolbar_frame,
+        text="Hide Sidebar",
+        command=lambda: [
+            sidebar.toggle_visibility(),
+            toggle_button.config(text="Show Toolbar" if not sidebar.is_visible else "Hide Toolbar")
+        ]
+    )
+    toggle_button.grid(row=0, column=0, sticky="w", padx=10, pady=5)
 
     button_logout = tk.Button(
         toolbar_frame,
         text="Log out",
         command=lambda: go_to_login(root_map))
-    button_logout.grid(row=0, column=0, sticky="e", padx=10, pady=5)
+    button_logout.grid(row=0, column=1, sticky="e", padx=10, pady=5)
 
     map_widget = tkintermapview.TkinterMapView(root_map)
-    map_widget.grid(row=1, column=0, sticky="nsew")
-    map_widget.set_position(52.229722, 21.011667 )
+    map_widget.grid(row=1, column=1, sticky="nsew")
+    map_widget.set_position(52.229722, 21.011667)
     map_widget.set_zoom(6)
 
     root_map.mainloop()
+
+
+class LeftToolbar(Frame):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.configure(width=200, bg='lightgray')
+        self.grid(row=1, column=0, sticky="ns")
+        self.grid_propagate(False)
+
+        self.is_visible = True
+
+    def toggle_visibility(self):
+        if self.is_visible:
+            self.grid_remove()
+            self.is_visible = False
+        else:
+            self.grid()
+            self.is_visible = True
+
+    def add_button(self, text, command=None):
+        button = tk.Button(self, text=text, command=lambda: command)
+        button.pack(pady=5, padx=5, fill="x")
+        return button
+
+    def create_list(self, items):
+
+        listbox = tk.Listbox(self, selectmode=tk.SINGLE)
+        listbox.pack(pady=5, padx=5, fill="both", expand=True)
+
+        for item in items:
+            listbox.insert(tk.END, item)
 
 
 
