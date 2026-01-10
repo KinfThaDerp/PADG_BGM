@@ -1,14 +1,11 @@
 import re
 
-# ─── Stuff ───────────────────────────────────────────────────────────────
+#  Stuff
 
 people_list:list = []
 
-voivoideships = ("dolnośląskie", "kujawsko-pomorskie", "lubelskie", "lubuskie", "łódzkie", "małopolskie", "mazowieckie",
-                 "opolskie", "podkarpackie", "podlaskie", "pomorskie", "śląskie", "świętokrzyskie",
-                 "warmińsko-mazurskie", "wielkopolskie", "zachodniopomorskie")
 
-# ─── Classes ───────────────────────────────────────────────────────────────
+#  Classes
 
 class ContactData:
     def __init__(self, number:int, email:str):

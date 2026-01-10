@@ -3,9 +3,9 @@ from tkinter import Frame
 
 import tkintermapview
 from libmap import controller as ctrl
-from libmap.model import voivoideships
 
-# ─── Window Directors ─────────────────────────────────────────────────────────
+
+#  Window Directors
 
 available_states = ("Disable", "Login", "Register", "Map")
 app_state = available_states[1]
@@ -25,30 +25,35 @@ def go_to_registry(window):
 def go_to_map(window):
     change_app_state(window, 3)
 
-# ─── Account Handlers ─────────────────────────────────────────────────────────
+#  Account Handlers
 
 def reset_password():
     tk.messagebox.showwarning(title="Warning!", message="You currently cannot reset passwords.\nPlease contact an administrator.",)
 
 
 def handle_register(root, **entries):
-    success, message = ctrl.register_account(
+    success, message = ctrl.register_account_person(
         username=entries["username"].get().strip(),
         email=entries["email"].get().strip(),
         password=entries["password"].get().strip(),
         confirm_password=entries["confirm_password"].get().strip(),
 
-        # kwargs
-        phone=entries["phonenumber"].get().strip() if entries.get("phonenumber") else None,
-        voivoideship=entries["voivoideship"].get().strip() if entries.get("voivoideship") else None,
+        # Personal Info
+        name=entries["name"].get().strip() if entries.get("name") else None,
+        surname=entries["surname"].get().strip() if entries.get("surname") else None,
+
+        # Contact
+        phone_number=entries["phonenumber"].get().strip() if entries.get("phonenumber") else None,
+
+        # Location
         city=entries["city"].get().strip() if entries.get("city") else None,
         street=entries["street"].get().strip() if entries.get("street") else None,
         building=entries["building"].get().strip() if entries.get("building") else None,
         apartment=entries["apartment"].get().strip() if entries.get("apartment") else None,
     )
 
+
     if success:
-        tk.messagebox.showinfo("Success", message)
         go_to_login(root)
     else:
         tk.messagebox.showerror("Error", message)
@@ -60,12 +65,11 @@ def handle_login(root, **entries):
     )
 
     if success:
-        #tk.messagebox.showinfo("Success", message)
         go_to_map(root)
     else:
         tk.messagebox.showerror("Error", message)
 
-# ─── Windows ───────────────────────────────────────────────────────────────
+#  Windows
 
 def login_window():
     global app_state
@@ -110,7 +114,7 @@ def register_window():
     app_state = available_states[0]
     root_register = tk.Tk()
     root_register.title("Mapbook - Register")
-    root_register.geometry("400x400")
+    root_register.geometry("400x450")
 
     frame_registry = tk.Frame(root_register)
     frame_registry.pack(pady=30)
@@ -139,42 +143,50 @@ def register_window():
     entry_confirm_password.grid(row=4, column=1)
 
     label_optional = tk.Label(frame_registry,text="Optional")
-    label_optional.grid(row=5, column=0, columnspan=2,pady=10)
+    label_optional.grid(row=5, column=0, columnspan=2,pady=3)
+
+
+    label_name = tk.Label(frame_registry, text="Name: ")
+    label_name.grid(row=6, column=0, sticky=tk.W)
+    entry_name = tk.Entry(frame_registry)
+    entry_name.grid(row=6, column=0, sticky=tk.E, columnspan=2)
+
+    label_surname = tk.Label(frame_registry, text="Surname: ")
+    label_surname.grid(row=7, column=0, sticky=tk.W)
+    entry_surname = tk.Entry(frame_registry)
+    entry_surname.grid(row=7, column=0, sticky=tk.E, columnspan=2)
 
     label_phonenumber= tk.Label(frame_registry, text="Phone Number: ")
-    label_phonenumber.grid(row=6, column=0, sticky=tk.W)
+    label_phonenumber.grid(row=8, column=0, sticky=tk.W)
     entry_phonenumber= tk.Entry(frame_registry)
-    entry_phonenumber.grid(row=6, column=1)
+    entry_phonenumber.grid(row=8, column=1)
 
-    label_voivoideship = tk.Label(frame_registry, text="Voivoideship: ")
-    label_voivoideship.grid(row=7, column=0, sticky=tk.W)
-    global voivoideships
-    selected_voivoideship= tk.StringVar(value="Select")
-    entry_voivoideship = tk.OptionMenu(frame_registry, selected_voivoideship, *voivoideships)
-    entry_voivoideship.grid(row=7, column=0, sticky=tk.E, columnspan=2)
+
+    frame_spacing = tk.Frame(frame_registry)
+    frame_spacing.grid(row=9, column=0, columnspan=2, pady=3)
 
     label_city = tk.Label(frame_registry, text="City: ")
-    label_city.grid(row=8, column=0, sticky=tk.W)
+    label_city.grid(row=10, column=0, sticky=tk.W)
     entry_city = tk.Entry(frame_registry)
-    entry_city.grid(row=8, column=1)
+    entry_city.grid(row=10, column=1)
 
     label_street = tk.Label(frame_registry, text="Street: ")
-    label_street.grid(row=9, column=0, sticky=tk.W)
+    label_street.grid(row=11, column=0, sticky=tk.W)
     entry_street = tk.Entry(frame_registry)
-    entry_street.grid(row=9, column=1)
+    entry_street.grid(row=11, column=1)
 
     label_building = tk.Label(frame_registry, text="Building: ")
-    label_building.grid(row=10, column=0, sticky=tk.W)
+    label_building.grid(row=12, column=0, sticky=tk.W)
     entry_building = tk.Entry(frame_registry)
-    entry_building.grid(row=10, column=1)
+    entry_building.grid(row=12, column=1)
 
     label_apartment = tk.Label(frame_registry, text="Apartment: ")
-    label_apartment.grid(row=11, column=0, sticky=tk.W)
+    label_apartment.grid(row=13, column=0, sticky=tk.W)
     entry_apartment = tk.Entry(frame_registry)
-    entry_apartment.grid(row=11, column=1)
+    entry_apartment.grid(row=13, column=1)
 
     button_cancel = tk.Button(frame_registry, text="Cancel", command=lambda: go_to_login(root_register))
-    button_cancel.grid(row=12,column=0,sticky="WE",pady=10)
+    button_cancel.grid(row=14,column=0,sticky="WE",pady=10)
     button_register = tk.Button(frame_registry,
                                 text="Register",
                                 command=lambda: handle_register(
@@ -184,14 +196,16 @@ def register_window():
                                     password=entry_password,
                                     confirm_password=entry_confirm_password,
 
+                                    name=entry_name,
+                                    surname=entry_surname,
                                     phonenumber=entry_phonenumber,
-                                    voivoideship=selected_voivoideship,
+
                                     city=entry_city,
                                     street=entry_street,
                                     building=entry_building,
                                     apartment=entry_apartment,
                                 ))
-    button_register.grid(row=12,column=1, sticky="WE",pady=10)
+    button_register.grid(row=14,column=1, sticky="WE",pady=10)
 
     root_register.mainloop()
 
@@ -217,7 +231,14 @@ def map_window():
         ctrl.fetch_people()
     )
 
-    sidebar.add_button("Add Book", command=lambda: print("Add Book"))
+
+    sidebar.add_button("View Info", command=lambda: print("View Person"))
+    sidebar.add_button("Edit", command=lambda: print("Edit Person"))
+    sidebar.add_button("Add", command=lambda: print("Add Person"))
+    sidebar.add_button("Remove", command=lambda: print("Remove Person"))
+
+
+
 
     toggle_button = tk.Button(
         toolbar_frame,

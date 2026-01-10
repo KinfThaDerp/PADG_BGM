@@ -39,11 +39,11 @@ CREATE TABLE account (
 
 CREATE TABLE person (
     id serial PRIMARY KEY,
-    account INT REFERENCES contact(id) ON DELETE SET NULL UNIQUE,
+    account INT REFERENCES account(id) ON DELETE SET NULL,
     name text NOT NULL,
     surname text NOT NULL,
-    contact INT REFERENCES contact(id) ON DELETE SET NULL UNIQUE,
-    address INT REFERENCES address(id) ON DELETE SET NULL UNIQUE
+    contact INT REFERENCES contact(id) ON DELETE SET NULL,
+    address INT REFERENCES address(id) ON DELETE SET NULL
 );
 
 
