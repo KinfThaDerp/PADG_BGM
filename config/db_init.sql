@@ -51,7 +51,7 @@ CREATE TABLE book (
     id serial PRIMARY KEY,
     title text NOT NULL ,
     author text NOT NULL ,
-    isbn text UNIQUE,
+    isbn_13 text UNIQUE,
     publisher text,
     genre text
 );

@@ -67,7 +67,7 @@ def scrape_voivodeship(location):
 
     return None
 
-#  Database helpers
+#  Database
 
 def does_account_with_username_exist(username: str) -> bool:
     query = """
@@ -144,6 +144,17 @@ def insert_person(
     cursor.execute(query, (account_id, name, surname, contact_id, address_id))
     return cursor.fetchone()[0]
 
+def simple_fetch(fetch_func, *args, **kwargs) -> list:
+    original_tuple = fetch_func(*args, **kwargs)
+    result = []
+    for item in original_tuple:
+        filtered_item = []  # Define it *once per row*
+        for info in item:
+            if info is not None and not (isinstance(info, int) or (isinstance(info, str) and info.isdigit())):
+                filtered_item.append(info)
+        result.append(filtered_item)
+    return result
+
 
 def fetch_people() -> list:
     query = """
@@ -151,11 +162,25 @@ def fetch_people() -> list:
             """
     cursor.execute(query)
     people = cursor.fetchall()
-    new_people = []
-    for person in people:
-        new_people.append([person[2],person[3]])
-    return new_people
+    return people
 
+def fetch_books(**kwargs) -> list:
+    simple = kwargs.get("simple")
+    query = """
+            SELECT * FROM book;
+            """
+    cursor.execute(query)
+    books = cursor.fetchall()
+    return books
+
+def fetch_libraries(**kwargs) -> list:
+    simple = kwargs.get("simple")
+    query = """
+            SELECT * FROM library;
+            """
+    cursor.execute(query)
+    libraries = cursor.fetchall()
+    return libraries
 
 def fetch_city_id(name: str) -> int | None:
     if not name:
@@ -262,28 +287,4 @@ def login_account(
     return True, "Login successful."
 
 if __name__ == "__main__":
-    # ok, msg = register_account(
-    #     "KinfThaDerp",
-    #     "bassam.grzegorz@gmail.com",
-    #     "xd987654",
-    #     "xd987654"
-    # )
-    # print(ok, msg)
-    # print(fetch_people())
-    # Example usage of register_account_person function
-    # success, message = register_account_person(
-    #     username="johndoe",
-    #     email="john.doe@example.com",
-    #     password="SecurePass123",
-    #     confirm_password="SecurePass123",
-    #     name="John",
-    #     surname="Doe",
-    #     phone_number=123456789,
-    #     city="Warszawa",
-    #     street="Main Street",
-    #     building="42A",
-    #     apartment="15"
-    # )
-    # print(f"Registration result: {success}")
-    # print(f"Message: {message}")
-    print(insert_city(connection.cursor(),"Warszawa"))
+    print(simple_fetch(fetch_people), "\n", simple_fetch(fetch_books), "\n", simple_fetch(fetch_libraries))

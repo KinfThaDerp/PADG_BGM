@@ -226,10 +226,7 @@ def map_window():
     toolbar_frame.grid_columnconfigure(1, weight=1)
 
     sidebar = LeftToolbar(root_map)
-
-    sidebar.create_list(
-        ctrl.fetch_people()
-    )
+    sidebar.toggle_visibility()
 
 
     sidebar.add_button("View Info", command=lambda: print("View Person"))
@@ -272,6 +269,25 @@ class LeftToolbar(Frame):
         self.grid_propagate(False)
 
         self.is_visible = True
+        self.current_mode = "People"
+        self.listbox = None
+
+        self.mode_frame = tk.Frame(self, bg='lightgray')
+        self.mode_frame.pack(pady=5, padx=5)
+
+        self.button_people = tk.Button(self.mode_frame, text="People", command=lambda: self.switch_mode("People"))
+        self.button_people.pack(side="left", padx=2)
+
+        self.button_books = tk.Button(self.mode_frame, text="Books", command=lambda: self.switch_mode("Books"))
+        self.button_books.pack(side="left", padx=2)
+
+        self.button_libraries = tk.Button(self.mode_frame, text="Libraries", command=lambda: self.switch_mode("Libraries"))
+        self.button_libraries.pack(side="left", padx=2)
+
+        self.list_frame = tk.Frame(self)
+        self.list_frame.pack(fill="both", expand=True, pady=5, padx=5)
+
+        self.create_list([])
 
     def toggle_visibility(self):
         if self.is_visible:
@@ -281,18 +297,28 @@ class LeftToolbar(Frame):
             self.grid()
             self.is_visible = True
 
+    def switch_mode(self, mode):
+        self.current_mode = mode
+
+        if mode == "People": items = ctrl.simple_fetch(ctrl.fetch_people)
+        elif mode == "Books": items = ctrl.simple_fetch(ctrl.fetch_books)
+        elif mode == "Libraries": items = ctrl.simple_fetch(ctrl.fetch_libraries)
+        self.create_list(items)
+
     def add_button(self, text, command=None):
-        button = tk.Button(self, text=text, command=lambda: command)
+        button = tk.Button(self, text=text, command=command)
         button.pack(pady=5, padx=5, fill="x")
         return button
 
     def create_list(self, items):
+        if self.listbox:
+            self.listbox.destroy()
 
-        listbox = tk.Listbox(self, selectmode=tk.SINGLE)
-        listbox.pack(pady=5, padx=5, fill="both", expand=True)
+        self.listbox = tk.Listbox(self.list_frame, selectmode=tk.SINGLE)
+        self.listbox.pack(fill="both", expand=True)
 
         for item in items:
-            listbox.insert(tk.END, item)
+            self.listbox.insert(tk.END, item)
 
 
 
