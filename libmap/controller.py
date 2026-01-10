@@ -30,6 +30,11 @@ EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
 def is_valid_email(email: str) -> bool:
     return bool(EMAIL_REGEX.fullmatch(email))
 
+def is_valid_phone_number(phone_number:int) -> bool:
+    if (len(str(phone_number)) == 9 or len(str(phone_number)) == 11)  and isinstance(phone_number, int):
+        return True
+    else:
+        return False
 
 #  Password Hashing
 
@@ -287,4 +292,17 @@ def login_account(
     return True, "Login successful."
 
 if __name__ == "__main__":
-    print(simple_fetch(fetch_people), "\n", simple_fetch(fetch_books), "\n", simple_fetch(fetch_libraries))
+    # cursor = connection.cursor()
+    #
+    # query = "SELECT * FROM book"
+    # where = " WHERE title LIKE %s"
+    #
+    # sql = query + where
+    # param = ("%Classical Mythology%",)
+    #
+    # cursor.execute(sql, param)
+    # result = cursor.fetchall()
+    # print(result)
+
+
+    print(fetch_libraries())

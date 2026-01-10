@@ -2,8 +2,7 @@ import tkinter as tk
 from tkinter import Frame
 
 import tkintermapview
-from libmap import controller as ctrl
-
+from libmap import controller as ctrl, model
 
 #  Window Directors
 
@@ -300,9 +299,9 @@ class LeftToolbar(Frame):
     def switch_mode(self, mode):
         self.current_mode = mode
 
-        if mode == "People": items = ctrl.simple_fetch(ctrl.fetch_people)
-        elif mode == "Books": items = ctrl.simple_fetch(ctrl.fetch_books)
-        elif mode == "Libraries": items = ctrl.simple_fetch(ctrl.fetch_libraries)
+        if mode == "People": items = model.get_people_list()
+        elif mode == "Books": items = model.get_books_list()
+        elif mode == "Libraries": items = model.get_libraries_list()
         self.create_list(items)
 
     def add_button(self, text, command=None):
