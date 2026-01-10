@@ -224,21 +224,20 @@ def map_window():
     toolbar_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
     toolbar_frame.grid_columnconfigure(1, weight=1)
 
+
     sidebar = LeftToolbar(root_map)
     sidebar.toggle_visibility()
 
-
-    sidebar.add_button("View Info", command=lambda: print("View Person"))
-    sidebar.add_button("Edit", command=lambda: print("Edit Person"))
-    sidebar.add_button("Add", command=lambda: print("Add Person"))
-    sidebar.add_button("Remove", command=lambda: print("Remove Person"))
+    model.refresh_people()
+    model.refresh_libraries()
+    model.refresh_books()
 
 
 
 
     toggle_button = tk.Button(
         toolbar_frame,
-        text="Hide Sidebar",
+        text="Show Sidebar",
         command=lambda: [
             sidebar.toggle_visibility(),
             toggle_button.config(text="Show Toolbar" if not sidebar.is_visible else "Hide Toolbar")
@@ -268,57 +267,177 @@ class LeftToolbar(Frame):
         self.grid_propagate(False)
 
         self.is_visible = True
-        self.current_mode = "People"
+        self.current_mode = "Select Mode"
         self.listbox = None
 
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
         self.mode_frame = tk.Frame(self, bg='lightgray')
-        self.mode_frame.pack(pady=5, padx=5)
+        self.mode_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 
-        self.button_people = tk.Button(self.mode_frame, text="People", command=lambda: self.switch_mode("People"))
-        self.button_people.pack(side="left", padx=2)
+        tk.Button(self.mode_frame, text="People",
+                  command=lambda: self.switch_mode("People")).pack(side="left", padx=2)
+        tk.Button(self.mode_frame, text="Books",
+                  command=lambda: self.switch_mode("Books")).pack(side="left", padx=2)
+        tk.Button(self.mode_frame, text="Libraries",
+                  command=lambda: self.switch_mode("Libraries")).pack(side="left", padx=2)
 
-        self.button_books = tk.Button(self.mode_frame, text="Books", command=lambda: self.switch_mode("Books"))
-        self.button_books.pack(side="left", padx=2)
+        self.info_frame = tk.Frame(self, bg='lightgray')
+        self.info_frame.grid(row=1, column=0, sticky="ew", padx=5)
 
-        self.button_libraries = tk.Button(self.mode_frame, text="Libraries", command=lambda: self.switch_mode("Libraries"))
-        self.button_libraries.pack(side="left", padx=2)
+        self.current_mode_label = tk.Label(self.info_frame, text=self.current_mode)
+        self.current_mode_label.pack(side="left")
 
-        self.list_frame = tk.Frame(self)
-        self.list_frame.pack(fill="both", expand=True, pady=5, padx=5)
+        tk.Button(self.info_frame, text="Refresh",
+                  command=lambda: model.refresh_all()).pack(side="right")
+
+        self.list_frame = tk.Frame(self, bg='lightgray')
+        self.list_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
 
         self.create_list([])
 
-    def toggle_visibility(self):
-        if self.is_visible:
-            self.grid_remove()
-            self.is_visible = False
-        else:
-            self.grid()
-            self.is_visible = True
+        self.buttons_frame = tk.Frame(self, bg='lightgray')
+        self.buttons_frame.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
 
     def switch_mode(self, mode):
         self.current_mode = mode
+        self.current_mode_label.config(text=mode)
 
-        if mode == "People": items = model.get_people_list()
-        elif mode == "Books": items = model.get_books_list()
-        elif mode == "Libraries": items = model.get_libraries_list()
+        if mode == "People":
+            items = model.get_people_list()
+        elif mode == "Books":
+            items = model.get_books_list()
+        elif mode == "Libraries":
+            items = model.get_libraries_list()
+        else:
+            items = []
+
         self.create_list(items)
+        self.create_mode_buttons(mode)
 
-    def add_button(self, text, command=None):
-        button = tk.Button(self, text=text, command=command)
-        button.pack(pady=5, padx=5, fill="x")
-        return button
+    def create_mode_buttons(self, mode):
+        for widget in self.buttons_frame.winfo_children():
+            widget.destroy()
+
+        for action in ("Add", "Edit", "View Info", "Delete"):
+            tk.Button(
+                self.buttons_frame,
+                text=action,
+                command=lambda a=action, m=mode: self.handle_action(m, a)
+            ).pack(fill="x", pady=2)
+
+    def handle_action(self, mode, action):
+        selected_id = None
+
+        if self.listbox and self.listbox.curselection():
+            selected_index = self.listbox.curselection()[0]
+            selected_id = self.listbox.get(selected_index)
+
+        if mode == "People":
+            if action == "Add":
+                add_person_window(self)
+            elif action == "Edit":
+                edit_person_window(self, selected_id)
+            elif action == "View Info":
+                view_person_info_window(self, selected_id)
+            elif action == "Delete":
+                delete_person_window(self, selected_id)
+
+        elif mode == "Libraries":
+            print(f"{action} Library (not implemented yet)")
+
+        elif mode == "Books":
+            print(f"{action} Book (not implemented yet)")
 
     def create_list(self, items):
         if self.listbox:
             self.listbox.destroy()
 
-        self.listbox = tk.Listbox(self.list_frame, selectmode=tk.SINGLE)
+        self.listbox = tk.Listbox(self.list_frame)
         self.listbox.pack(fill="both", expand=True)
 
         for item in items:
             self.listbox.insert(tk.END, item)
 
+    def toggle_visibility(self):
+        if self.is_visible:
+            self.grid_remove()
+        else:
+            self.grid()
+        self.is_visible = not self.is_visible
+
+
+
+def add_person_window(parent):
+    win = tk.Toplevel(parent)
+    win.title("Add Person")
+    win.geometry("300x350")
+
+    tk.Label(win, text="Add New Person").pack(pady=10)
+
+    tk.Label(win, text="Name:").pack(anchor="w", padx=10)
+    entry_name = tk.Entry(win)
+    entry_name.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="Surname:").pack(anchor="w", padx=10)
+    entry_surname = tk.Entry(win)
+    entry_surname.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="Role:").pack(anchor="w", padx=10)
+    entry_role = tk.Entry(win)
+    entry_role.pack(fill="x", padx=10, pady=2)
+
+    tk.Button(win, text="Save", command=lambda: print("Add person logic here")).pack(pady=15)
+    tk.Button(win, text="Cancel", command=win.destroy).pack()
+
+
+def edit_person_window(parent, person_id=None):
+    win = tk.Toplevel(parent)
+    win.title("Edit Person")
+    win.geometry("300x350")
+
+    tk.Label(win, text=f"Edit Person (ID: {person_id})", font=("Arial", 12, "bold")).pack(pady=10)
+
+    tk.Label(win, text="Name:").pack(anchor="w", padx=10)
+    entry_name = tk.Entry(win)
+    entry_name.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="Surname:").pack(anchor="w", padx=10)
+    entry_surname = tk.Entry(win)
+    entry_surname.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="Role:").pack(anchor="w", padx=10)
+    entry_role = tk.Entry(win)
+    entry_role.pack(fill="x", padx=10, pady=2)
+
+    tk.Button(win, text="Update", command=lambda: print(f"Edit person {person_id} logic here")).pack(pady=15)
+    tk.Button(win, text="Cancel", command=win.destroy).pack()
+
+
+def view_person_info_window(parent, person_id=None):
+    win = tk.Toplevel(parent)
+    win.title("View Person Info")
+    win.geometry("300x300")
+
+    tk.Label(win, text=f"Person Info (ID: {person_id})", font=("Arial", 12, "bold")).pack(pady=10)
+
+    # Dummy placeholders (replace with real data)
+    tk.Label(win, text="Name: John").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text="Surname: Doe").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text="Role: Client").pack(anchor="w", padx=10, pady=2)
+
+    tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
+
+
+def delete_person_window(parent, person_id=None):
+    win = tk.Toplevel(parent)
+    win.title("Delete Person")
+    win.geometry("250x150")
+
+    tk.Label(win, text=f"Delete Person (ID: {person_id})?").pack(pady=20)
+    tk.Button(win, text="Confirm", command=lambda: print(f"Delete person {person_id} logic here")).pack(pady=5)
+    tk.Button(win, text="Cancel", command=win.destroy).pack(pady=5)
 
 
 while app_state != available_states[0]:

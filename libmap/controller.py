@@ -109,7 +109,7 @@ def insert_account(cursor, username: str, email: str, password: str) -> int:
 
 def insert_contact(cursor, phone_number: int | None, email: str | None ) -> int:
     query = """
-            INSERT INTO contact (phoneNumber, email)
+            INSERT INTO contact (phone_number, email)
             VALUES (%s, %s)
             RETURNING id;
             """
@@ -126,7 +126,7 @@ def insert_address(
     coords: list[float] | tuple [float,float] | None
 ) -> int:
     query = """
-            INSERT INTO address (city, street, building, apartment, coords)
+            INSERT INTO address (city_id, street, building, apartment, coords)
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
             """
@@ -139,15 +139,29 @@ def insert_person(
     name: str,
     surname: str,
     contact_id: int | None,
-    address_id: int | None
+    address_id: int | None,
+    role: str = 'client'
 ) -> int:
     query = """
-             INSERT INTO person (account, name, surname, contact, address)
-             VALUES (%s, %s, %s, %s, %s)
-             RETURNING id;
-             """
-    cursor.execute(query, (account_id, name, surname, contact_id, address_id))
+        INSERT INTO person (account_id, name, surname, contact_id, address_id, role)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING id;
+    """
+    cursor.execute(query, (account_id, name, surname, contact_id, address_id, role))
     return cursor.fetchone()[0]
+
+def assign_employee_to_library(
+        cursor,
+        person_id: int,
+        library_id: int
+) -> None:
+    query = """
+        INSERT INTO library_employee (person_id, library_id)
+        VALUES (%s, %s)
+        ON CONFLICT (person_id, library_id) DO NOTHING;
+    """
+    cursor.execute(query, (person_id, library_id))
+
 
 def simple_fetch(fetch_func, *args, **kwargs) -> list:
     original_tuple = fetch_func(*args, **kwargs)
@@ -161,16 +175,18 @@ def simple_fetch(fetch_func, *args, **kwargs) -> list:
     return result
 
 
-def fetch_people() -> list:
+def fetch_people(role: str | None = None) -> list:
     query = """
-            SELECT * FROM person;
-            """
-    cursor.execute(query)
-    people = cursor.fetchall()
-    return people
+            SELECT id, account_id, name, surname, contact_id, address_id, role 
+            FROM person"""
+    if role:
+        query += " WHERE role = %s"
+        cursor.execute(query, (role,))
+    else:
+        cursor.execute(query)
+    return cursor.fetchall()
 
-def fetch_books(**kwargs) -> list:
-    simple = kwargs.get("simple")
+def fetch_books() -> list:
     query = """
             SELECT * FROM book;
             """
@@ -178,14 +194,13 @@ def fetch_books(**kwargs) -> list:
     books = cursor.fetchall()
     return books
 
-def fetch_libraries(**kwargs) -> list:
-    simple = kwargs.get("simple")
+def fetch_libraries() -> list:
     query = """
-            SELECT * FROM library;
-            """
+        SELECT id, name, address_id, contact_id, city_id
+        FROM library;
+    """
     cursor.execute(query)
-    libraries = cursor.fetchall()
-    return libraries
+    return cursor.fetchall()
 
 def fetch_city_id(name: str) -> int | None:
     if not name:
@@ -204,18 +219,21 @@ def insert_city(cursor, name: str) -> int | None:
     if not name:
         return None
 
-    voivodeship = scrape_voivodeship(name)
-    if not voivodeship:
-        voivodeship = "Unknown"
+    voivodeship = scrape_voivodeship(name) or "Unknown"
+
+    try:
+        coords = scrape_coords(name)  # (lat, lon)
+    except Exception as e:
+        print(f"Failed to get coordinates for '{name}': {e}")
+        return None
 
     query = """
-            INSERT INTO city (name, voivodeship) 
-            VALUES (%s, %s) 
-            RETURNING id;
-            """
-    cursor.execute(query, (name, voivodeship))
+        INSERT INTO city (name, voivodeship, coords) 
+        VALUES (%s, %s, ARRAY[%s, %s]::real[])
+        RETURNING id;
+    """
+    cursor.execute(query, (name, voivodeship, coords[0], coords[1]))
     return cursor.fetchone()[0]
-#  Logic
 
 def register_account_person(
     username: str,
@@ -251,7 +269,7 @@ def register_account_person(
                 if city_id is None:
                     city_id = insert_city(cursor, city)
 
-                latitude, longitude = scrape_coords("Warszawa")
+                latitude, longitude = scrape_coords(city)
                 coords = [latitude, longitude]
 
                 account_id = insert_account(cursor, username, email, password)
@@ -292,17 +310,5 @@ def login_account(
     return True, "Login successful."
 
 if __name__ == "__main__":
-    # cursor = connection.cursor()
-    #
-    # query = "SELECT * FROM book"
-    # where = " WHERE title LIKE %s"
-    #
-    # sql = query + where
-    # param = ("%Classical Mythology%",)
-    #
-    # cursor.execute(sql, param)
-    # result = cursor.fetchall()
-    # print(result)
-
-
-    print(fetch_libraries())
+    print("Running controller.py")
+    print(fetch_people(role="client"))
