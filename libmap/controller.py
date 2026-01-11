@@ -8,6 +8,7 @@ import requests
 
 load_dotenv(verbose=True)
 
+
 # Database
 
 connection = psycopg2.connect(
@@ -20,15 +21,12 @@ connection = psycopg2.connect(
 cursor = connection.cursor()
 
 
-
-
 #  Validation
 
 EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
-
-
 def is_valid_email(email: str) -> bool:
     return bool(EMAIL_REGEX.fullmatch(email))
+
 
 def is_valid_phone_number(phone_number:int) -> bool:
     if (len(str(phone_number)) == 9 or len(str(phone_number)) == 11)  and isinstance(phone_number, int):
@@ -36,22 +34,23 @@ def is_valid_phone_number(phone_number:int) -> bool:
     else:
         return False
 
+
 #  Password Hashing
 
 def hash_password(password: str) -> str:
-    # bcrypt automatically generates a salt and stores it in the hash
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def verify_password(password: str, stored_hash: str) -> bool:
-    # bcrypt handles the salt automatically when verifying
     return bcrypt.checkpw(password.encode(), stored_hash.encode())
 
+
 #  Web Scraping
+
 header = {
             "User-Agent": "<Mozilla 5/0 (Windows NT 10.0; Win64; x64; Trident/7.0)>",
         }
-def scrape_coords(location):
+def scrape_coords(location) -> (float, float):
     url: str = f'https://pl.wikipedia.org/wiki/{location}'
     response = requests.get(url, headers=header)
     response_html = BeautifulSoup(response.content, 'html.parser')
@@ -59,7 +58,8 @@ def scrape_coords(location):
     longitude = float((response_html.select('.longitude'))[1].text.replace(',', '.'))
     return latitude, longitude
 
-def scrape_voivodeship(location):
+
+def scrape_voivodeship(location) -> str | None:
     url: str = f'https://pl.wikipedia.org/wiki/{location}'
     response = requests.get(url, headers=header)
     response_html = BeautifulSoup(response.content, 'html.parser')
@@ -69,8 +69,8 @@ def scrape_voivodeship(location):
         title = link['title']
         if title.startswith('Województwo '):
             return link.text.strip()
-
     return None
+
 
 #  Database
 
@@ -94,6 +94,7 @@ def does_account_with_email_exist(email: str) -> bool:
             """
     cursor.execute(query, (email,))
     return cursor.fetchone() is not None
+
 
 # Database - Inserters
 
@@ -129,8 +130,7 @@ def insert_address(
     if coords and len(coords) == 2:
         lat, lon = coords
     else:
-        lat, lon = None, None  # store NULL if coords missing
-
+        lat, lon = None, None
     query = """
         INSERT INTO address (city_id, street, building, apartment, coords)
         VALUES (%s, %s, %s, %s, ARRAY[%s, %s]::real[])
@@ -138,6 +138,7 @@ def insert_address(
     """
     cursor.execute(query, (city_id, street, building, apartment, lat, lon))
     return cursor.fetchone()[0]
+
 
 def insert_person(
     cursor,
@@ -156,18 +157,16 @@ def insert_person(
     cursor.execute(query, (account_id, name, surname, contact_id, address_id, role))
     return cursor.fetchone()[0]
 
+
 def insert_city(cursor, name: str) -> int | None:
     if not name:
         return None
-
     voivodeship = scrape_voivodeship(name) or "Unknown"
-
     try:
         coords = scrape_coords(name)  # (lat, lon)
     except Exception as e:
         print(f"Failed to get coordinates for '{name}': {e}")
         return None
-
     query = """
         INSERT INTO city (name, voivodeship, coords) 
         VALUES (%s, %s, ARRAY[%s, %s]::real[])
@@ -175,6 +174,7 @@ def insert_city(cursor, name: str) -> int | None:
     """
     cursor.execute(query, (name, voivodeship, coords[0], coords[1]))
     return cursor.fetchone()[0]
+
 
 def insert_book(cursor, title: str, author: str, isbn_13: str | None, publisher: str | None, genre: str | None) -> int:
     query = """
@@ -185,6 +185,7 @@ def insert_book(cursor, title: str, author: str, isbn_13: str | None, publisher:
     cursor.execute(query, (title, author, isbn_13, publisher, genre))
     return cursor.fetchone()[0]
 
+
 def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
     query = """
             INSERT INTO library_employee (person_id, library_id)
@@ -192,13 +193,13 @@ def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
             ON CONFLICT (person_id, library_id) DO NOTHING; \
             """
     cursor.execute(query, (person_id, library_id))
-
     update_role_query = """
                         UPDATE person
                         SET role = 'employee'
                         WHERE id = %s; \
                         """
     cursor.execute(update_role_query, (person_id,))
+
 
 # Database - Updates
 
@@ -210,6 +211,7 @@ def update_person(cursor, person_id: int, **kwargs) -> None:
                 )
     cursor.execute(query, (*kwargs.values(), person_id))
 
+
 def update_book(cursor, book_id: int, **kwargs) -> None:
     query = """
                 UPDATE book SET {} WHERE id = %s;
@@ -217,6 +219,7 @@ def update_book(cursor, book_id: int, **kwargs) -> None:
         ", ".join(f"{key} = %s" for key in kwargs.keys())
     )
     cursor.execute(query, (*kwargs.values(), book_id))
+
 
 def update_library(cursor, library_id: int, **kwargs) -> None:
     query = """
@@ -226,9 +229,10 @@ def update_library(cursor, library_id: int, **kwargs) -> None:
     )
     cursor.execute(query, (*kwargs.values(), library_id))
 
+
 # Database - Deletions
 
-def delete_book(cursor, book_id: int):
+def delete_book(cursor, book_id: int) -> None:
     query = "DELETE FROM book WHERE id = %s;"
     cursor.execute(query, (book_id,))
 
@@ -246,14 +250,6 @@ def fetch_people(role: str | None = None) -> list:
         cursor.execute(query)
     return cursor.fetchall()
 
-def fetch_person(person_id: int) -> tuple[int, int, str, str, int | None, int | None, str]:
-    query = """
-            SELECT id, account_id, name, surname, contact_id, address_id, role 
-            FROM person WHERE id = %s; \
-            """
-    cursor.execute(query, (person_id,))
-    return cursor.fetchone()
-
 def fetch_books() -> list:
     query = """
             SELECT * FROM book;
@@ -261,6 +257,7 @@ def fetch_books() -> list:
     cursor.execute(query)
     books = cursor.fetchall()
     return books
+
 
 def fetch_book(book_id: int) -> tuple[int, str, str, str | None, str | None, str | None]:
     query = """
@@ -270,6 +267,7 @@ def fetch_book(book_id: int) -> tuple[int, str, str, str | None, str | None, str
     cursor.execute(query, (book_id,))
     return cursor.fetchone()
 
+
 def fetch_libraries() -> list:
     query = """
         SELECT id, name, address_id, contact_id, city_id
@@ -278,6 +276,7 @@ def fetch_libraries() -> list:
     cursor.execute(query)
     return cursor.fetchall()
 
+
 def fetch_library(library_id: int) -> tuple[int, str, int | None, int | None, int]:
     query = """
         SELECT id, name, address_id, contact_id, city_id
@@ -285,6 +284,7 @@ def fetch_library(library_id: int) -> tuple[int, str, int | None, int | None, in
     """
     cursor.execute(query, (library_id,))
     return cursor.fetchone()
+
 
 def fetch_city_id(name: str) -> int | None:
     if not name:
@@ -299,16 +299,6 @@ def fetch_city_id(name: str) -> int | None:
     result = cursor.fetchone()
     return result[0] if result else None
 
-def fetch_person_id(name: str, surname: str) -> int | None:
-    query = """
-        SELECT id
-        FROM person
-        WHERE name = %s AND surname = %s
-        LIMIT 1;
-    """
-    cursor.execute(query, (name, surname))
-    result = cursor.fetchone()
-    return result[0] if result else None
 
 def fetch_city(person_id: int) -> str | None:
     query = """
@@ -320,6 +310,7 @@ def fetch_city(person_id: int) -> str | None:
     result = cursor.fetchone()
     return result[0] if result else None
 
+
 def fetch_address(address_id: int) -> tuple[str, str, str, str, list[float]]:
     query = """
         SELECT city.name, address.street, address.building, address.apartment, address.coords
@@ -330,6 +321,7 @@ def fetch_address(address_id: int) -> tuple[str, str, str, str, list[float]]:
     cursor.execute(query, (address_id,))
     result = cursor.fetchone()
     return result if result else (None, None, None, None, None)
+
 
 def fetch_contact(contact_id: int) -> tuple | None:
     query ="""
@@ -356,44 +348,35 @@ def register_account_person(
     building: str | None,
     apartment: str | None
 ,   model=None) -> tuple[bool, str]:
-
     if password != confirm_password:
         return False, "Passwords do not match"
-
     if not is_valid_email(email):
         return False, "Invalid email format"
-
     try:
         with connection:
             with connection.cursor() as cursor:
 
                 if does_account_with_username_exist(username):
                     return False, "Username already exists"
-
                 if does_account_with_email_exist(email):
                     return False, "Email already exists"
-
                 city_id = fetch_city_id(city)
                 if city_id is None:
                     city_id = insert_city(cursor, city)
-
                 try:
                     latitude, longitude = scrape_coords(city)
                 except Exception:
                     return False, "Invalid city"
                 coords = [latitude, longitude]
-
                 account_id = insert_account(cursor, username, email, password)
                 contact_id = insert_contact(cursor, phone_number, email)
                 address_id = insert_address(cursor,city_id,street,building,apartment, coords)
-
                 insert_person(cursor,account_id,name,surname,contact_id,address_id)
-
         return True, "User registered successfully"
-
     except psycopg2.Error as e:
         connection.rollback()
         return False, f"error: {e.pgerror}"
+
 
 def login_account(
         username: str,
@@ -401,26 +384,21 @@ def login_account(
 ) -> tuple[bool, str, int | None]:
     if not username or not password:
         return False, "Required fields are missing.", None
-
     if not does_account_with_username_exist(username):
         return False, "User doesn't exist.", None
-
     query = """
             SELECT id, password_hash
             FROM account
             WHERE username = %s
             LIMIT 1;
             """
-
     cursor.execute(query, (username,))
     result = cursor.fetchone()
     account_id, stored_password_hash = result[0], result[1]
-
     if not verify_password(password, stored_password_hash):
         return False, "Incorrect password.", None
-
-
     return True, "Login successful.", account_id
+
 
 # CRUD - Person
 
@@ -436,38 +414,30 @@ def add_person(
     apartment: str | None = None,
     role: str = 'client',
 ) -> tuple[bool, str]:
-
     if not name or not surname:
         return False, "Name and surname are required"
-
     if role not in ("employee", "client"):
         return False, "Invalid role"
-
     try:
         with connection:
             with connection.cursor() as cursor:
-
-                # City
                 city_id = fetch_city_id(city)
                 if city and city_id is None:
                     city_id = insert_city(cursor, city)
-
                 coords = None
                 if city:
                     try:
                         coords = list(scrape_coords(city))
                     except Exception:
                         return False, "Invalid city"
-
                 contact_id = insert_contact(cursor, phone_number, email)
                 address_id = insert_address(cursor,city_id,street,building,apartment,coords)
                 insert_person(cursor,account_id,name,surname,contact_id,address_id,role)
-
         return True, "Person added successfully"
-
     except psycopg2.Error as e:
         connection.rollback()
         return False, f"Database error: {e.pgerror}"
+
 
 def edit_person(
     person_id: int,
@@ -492,9 +462,7 @@ def edit_person(
                 person = cursor.fetchone()
                 if not person:
                     return False, "Person not found"
-
                 old_name, old_surname, contact_id, address_id = person
-
                 cursor.execute("""
                     SELECT phone_number, email
                     FROM contact
@@ -503,7 +471,6 @@ def edit_person(
                 """, (contact_id,))
                 contact = cursor.fetchone()
                 old_phone, old_email = contact if contact else (None, None)
-
                 cursor.execute("""
                     SELECT city.name, address.street, address.building, address.apartment, address.coords
                     FROM address
@@ -514,11 +481,9 @@ def edit_person(
                 old_city, old_street, old_building, old_apartment, old_coords = (
                     address if address else (None, None, None, None, None)
                 )
-
                 update_person(cursor, person_id,
                               name=name if name is not None else old_name,
                               surname=surname if surname is not None else old_surname)
-
                 new_phone = phone_number if phone_number is not None else old_phone
                 new_email = email if email is not None else old_email
                 if (new_phone != old_phone) or (new_email != old_email):
@@ -528,7 +493,6 @@ def edit_person(
                             email = %s
                         WHERE id = %s;
                     """, (new_phone, new_email, contact_id))
-
                 if city is not None:
                     city_id = fetch_city_id(city)
                     if city_id is None:
@@ -540,7 +504,6 @@ def edit_person(
                 else:
                     city_id = fetch_city_id(old_city)
                     coords = old_coords
-
                 cursor.execute("""
                     UPDATE address
                     SET city_id = %s,
@@ -557,14 +520,13 @@ def edit_person(
                     coords,
                     address_id
                 ))
-
         return True, "Person updated successfully"
-
     except psycopg2.Error as e:
         connection.rollback()
         return False, f"Database error: {e.pgerror}"
     except Exception as e:
         return False, str(e)
+
 
 def get_person_info(person_id: int) -> dict | None:
     try:
@@ -578,7 +540,6 @@ def get_person_info(person_id: int) -> dict | None:
             person = cursor.fetchone()
             if not person:
                 return None
-
             person_dict = {
                 "id": person[0],
                 "account_id": person[1],
@@ -588,7 +549,6 @@ def get_person_info(person_id: int) -> dict | None:
                 "address_id": person[5],
                 "role": person[6]
             }
-
             contact_id = person_dict["contact_id"]
             if contact_id:
                 cursor.execute("SELECT phone_number, email FROM contact WHERE id = %s", (contact_id,))
@@ -599,7 +559,6 @@ def get_person_info(person_id: int) -> dict | None:
                     person_dict["phone_number"], person_dict["email"] = None, None
             else:
                 person_dict["phone_number"], person_dict["email"] = None, None
-
             address_id = person_dict["address_id"]
             if address_id:
                 cursor.execute("""
@@ -615,12 +574,11 @@ def get_person_info(person_id: int) -> dict | None:
                     person_dict["city"], person_dict["street"], person_dict["building"], person_dict["apartment"], person_dict["coords"] = (None, None, None, None, None)
             else:
                 person_dict["city"], person_dict["street"], person_dict["building"], person_dict["apartment"], person_dict["coords"] = (None, None, None, None, None)
-
             return person_dict
-
     except Exception as e:
         print(f"Error fetching person info: {e}")
         return None
+
 
 def delete_person(person_id: int) -> tuple[bool, str]:
     try:
@@ -642,6 +600,7 @@ def delete_person(person_id: int) -> tuple[bool, str]:
     except Exception as e:
         return False, f"Failed to delete person: {str(e)}"
 
+
 # CRUD - Books
 
 def add_book(
@@ -653,7 +612,6 @@ def add_book(
 ) -> tuple[bool, str]:
     if not title or not author:
         return False, "Title and Author are required"
-
     try:
         with connection:
             with connection.cursor() as cursor:
@@ -725,7 +683,8 @@ def handler_delete_book(book_id: int) -> tuple[bool, str]:
         connection.rollback()
         return False, f"Database error: {e.pgerror}"
 
-# ---------------- Libraries ----------------
+
+# CRUD - Libraries
 
 def add_library(
     name: str,
@@ -738,21 +697,18 @@ def add_library(
 ) -> tuple[bool, str]:
     if not name:
         return False, "Library name is required"
-
     try:
         with connection:
             with connection.cursor() as cursor:
                 city_id = fetch_city_id(city)
                 if city and city_id is None:
                     city_id = insert_city(cursor, city)
-
                 coords = None
                 if city:
                     try:
                         coords = scrape_coords(city)
                     except Exception:
                         coords = None
-
                 contact_id = insert_contact(cursor, phone_number, email)
                 address_id = insert_address(cursor, city_id, street, building, apartment, coords)
 
@@ -766,7 +722,6 @@ def add_library(
         connection.rollback()
         return False, f"Database error: {e.pgerror}"
 
-# CRUD - Libraries
 
 def edit_library(
     library_id: int,
@@ -781,11 +736,8 @@ def edit_library(
     library = fetch_library(library_id)
     if not library:
         return False, "Library not found"
-
     lib_id, old_name, address_id, contact_id, old_city_id = library
-
     old_city, old_street, old_building, old_apartment, old_coords = fetch_address(address_id)
-
     try:
         with connection:
             with connection.cursor() as cursor:
@@ -801,8 +753,6 @@ def edit_library(
                 else:
                     city_id = old_city_id
                     coords = old_coords
-
-                # Update library
                 update_library(
                     cursor,
                     library_id,
@@ -810,15 +760,11 @@ def edit_library(
                     city_id=city_id,
                     address_id=address_id
                 )
-
-                # Update contact
                 old_phone, old_email = fetch_contact(contact_id) if contact_id else (None, None)
                 new_phone, new_email = phone_number or old_phone, email or old_email
                 if contact_id:
                     cursor.execute("UPDATE contact SET phone_number = %s, email = %s WHERE id = %s",
                                    (new_phone, new_email, contact_id))
-
-                # Update address
                 cursor.execute("""
                                UPDATE address
                                SET city_id = %s,
@@ -836,7 +782,6 @@ def edit_library(
                                    address_id
                                ))
         return True, "Library updated successfully"
-
     except psycopg2.Error as e:
         connection.rollback()
         return False, f"Database error: {e.pgerror}"
@@ -856,16 +801,12 @@ def get_library_info(library_id: int) -> dict | None:
                 "contact_id": library[3],
                 "city_id": library[4]
             }
-
-            # Fetch contact
             if lib_dict["contact_id"]:
                 cursor.execute("SELECT phone_number, email FROM contact WHERE id = %s", (lib_dict["contact_id"],))
                 contact = cursor.fetchone()
                 lib_dict["phone_number"], lib_dict["email"] = contact if contact else (None, None)
             else:
                 lib_dict["phone_number"], lib_dict["email"] = None, None
-
-            # Fetch address
             if lib_dict["address_id"]:
                 cursor.execute("""
                     SELECT city.name, address.street, address.building, address.apartment, address.coords
@@ -877,7 +818,6 @@ def get_library_info(library_id: int) -> dict | None:
                 lib_dict["city"], lib_dict["street"], lib_dict["building"], lib_dict["apartment"], lib_dict["coords"] = addr if addr else (None, None, None, None, None)
             else:
                 lib_dict["city"], lib_dict["street"], lib_dict["building"], lib_dict["apartment"], lib_dict["coords"] = (None, None, None, None, None)
-
             return lib_dict
     except Exception as e:
         print(f"Error fetching library info: {e}")
@@ -892,14 +832,12 @@ def delete_library(library_id: int) -> tuple[bool, str]:
                 result = cursor.fetchone()
                 if not result:
                     return False, "Library not found"
-
                 address_id, contact_id = result
                 cursor.execute("DELETE FROM library WHERE id = %s", (library_id,))
                 if contact_id:
                     cursor.execute("DELETE FROM contact WHERE id = %s", (contact_id,))
                 if address_id:
                     cursor.execute("DELETE FROM address WHERE id = %s", (address_id,))
-
         return True, "Library deleted successfully"
     except Exception as e:
         return False, f"Failed to delete library: {str(e)}"

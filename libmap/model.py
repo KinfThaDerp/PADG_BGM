@@ -1,7 +1,7 @@
 import libmap.controller as ctrl
+from libmap.controller import fetch_address
 
 account_id:int | None = None
-
 people: dict[int, dict] = {}
 books: dict[int, dict] = {}
 libraries: dict[int, dict] = {}
@@ -66,20 +66,34 @@ def refresh_all() -> None:
 
 def get_people_dict() -> dict:
     return people
+
+
 def get_people_list() -> list :
     return list(people.values())
 
 
+def get_person_coords(person_id: int) -> list[float]:
+    return ctrl.fetch_address(people[person_id]["address_id"])[-1]
+
+
 def get_books_dict() -> dict :
     return books
+
+
 def get_books_list() -> list:
     return list(books.values())
 
 
 def get_libraries_dict() -> dict:
     return libraries
+
+
 def get_libraries_list() -> list:
     return list(libraries.values())
+
+
+def get_libary_coords(library_id: int) -> list[float]:
+    return ctrl.fetch_address(libraries[library_id]["address_id"])[-1]
 
 def set_account(acc) -> None:
     global account_id
@@ -91,14 +105,4 @@ def get_account() -> int | None:
 
 if __name__ == '__main__':
     refresh_all()
-    #print("People:", get_people_dict().values())
-    #("People:", get_people_list())
-    for person in people.values():
-        print(person)
-        print("Coords", ctrl.fetch_address(person["address_id"])[-1])
-    #
-    # print("Books", get_books_dict().values())
-    # print("Books", get_books_list())
-    #
-    # print("Libraries", get_libraries_dict().values())
-    # print("Libraries", get_libraries_list())
+

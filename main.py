@@ -10,7 +10,7 @@ available_states = ("Disable", "Login", "Register", "Map")
 app_state = available_states[1]
 
 
-def change_app_state(window, state:int):
+def change_app_state(window, state:int) -> None:
     global app_state
     if 0<=state<=len(available_states):
         app_state = available_states[state]
@@ -19,41 +19,32 @@ def change_app_state(window, state:int):
         raise Exception("Failed to change App State!")
 
 
-def go_to_login(window):
+def go_to_login(window) -> None:
     model.set_account(None)
     change_app_state(window, 1)
 
 
-def go_to_registry(window):
+def go_to_registry(window) -> None:
     change_app_state(window, 2)
 
 
-def go_to_map(window):
+def go_to_map(window) -> None:
     change_app_state(window, 3)
 
 
-
-#  Account Handlers
-
-def reset_password():
+def reset_password() -> None:
     tk.messagebox.showwarning(title="Warning!", message="You currently cannot reset passwords.\nPlease contact an administrator.",)
 
 
-def handle_register(root, **entries):
+def handle_register(root, **entries) -> None:
     success, message = ctrl.register_account_person(
         username=entries["username"].get().strip(),
         email=entries["email"].get().strip(),
         password=entries["password"].get().strip(),
         confirm_password=entries["confirm_password"].get().strip(),
-
-        # Personal Info
         name=entries["name"].get().strip() if entries.get("name") else None,
         surname=entries["surname"].get().strip() if entries.get("surname") else None,
-
-        # Contact
         phone_number=entries["phonenumber"].get().strip() if entries.get("phonenumber") else None,
-
-        # Location
         city=entries["city"].get().strip() if entries.get("city") else None,
         street=entries["street"].get().strip() if entries.get("street") else None,
         building=entries["building"].get().strip() if entries.get("building") else None,
@@ -61,19 +52,17 @@ def handle_register(root, **entries):
         model=model
     )
     print(model.account_id)
-
     if success:
         go_to_login(root)
     else:
         tk.messagebox.showerror("Error", message)
 
 
-def handle_login(root, **entries):
+def handle_login(root, **entries) -> None:
     success, message, account_id = ctrl.login_account(
         username=entries["username"].get().strip(),
         password=entries["password"].get().strip(),
     )
-
     if success:
         model.set_account(account_id)
         go_to_map(root)
@@ -81,10 +70,7 @@ def handle_login(root, **entries):
         tk.messagebox.showerror("Error", message)
 
 
-#  Windows
-
-
-def login_window():
+def login_window() -> None:
     global app_state
     app_state = available_states[0]
     root_log = tk.Tk()
@@ -123,7 +109,7 @@ def login_window():
     print()
 
 
-def register_window():
+def register_window() -> None:
     global app_state
     app_state = available_states[0]
     root_register = tk.Tk()
@@ -159,7 +145,6 @@ def register_window():
     label_optional = tk.Label(frame_registry)
     label_optional.grid(row=5, column=0, columnspan=2,pady=3)
 
-
     label_name = tk.Label(frame_registry, text="Name: ")
     label_name.grid(row=6, column=0, sticky=tk.W)
     entry_name = tk.Entry(frame_registry)
@@ -174,7 +159,6 @@ def register_window():
     label_phonenumber.grid(row=8, column=0, sticky=tk.W)
     entry_phonenumber= tk.Entry(frame_registry)
     entry_phonenumber.grid(row=8, column=1)
-
 
     frame_spacing = tk.Frame(frame_registry)
     frame_spacing.grid(row=9, column=0, columnspan=2, pady=3)
@@ -224,7 +208,7 @@ def register_window():
     root_register.mainloop()
 
 
-def map_window():
+def map_window() -> None:
     global app_state
     app_state = available_states[0]
 
@@ -308,7 +292,7 @@ class LeftToolbar(Frame):
         self.items = []
 
 
-    def switch_mode(self, mode):
+    def switch_mode(self, mode) -> None:
         self.current_mode = mode
         self.current_mode_label.config(text=mode)
 
@@ -341,7 +325,7 @@ class LeftToolbar(Frame):
         self.create_list(display_items, ids)
         self.create_mode_buttons(mode)
 
-    def create_mode_buttons(self, mode):
+    def create_mode_buttons(self, mode) -> None:
         for widget in self.buttons_frame.winfo_children():
             widget.destroy()
 
@@ -352,7 +336,7 @@ class LeftToolbar(Frame):
                 command=lambda a=action, m=mode: self.handle_action(m, a)
             ).pack(fill="x", pady=2)
 
-    def handle_action(self, mode, action):
+    def handle_action(self, mode, action) -> None:
         selected_id = None
         if self.listbox and self.listbox.curselection():
             selected_index = self.listbox.curselection()[0]
@@ -762,7 +746,7 @@ def edit_library_window(parent, library_id):
     tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
-def view_library_info_window(parent, library_id):
+def view_library_info_window(parent, library_id) -> None:
     library_data = ctrl.get_library_info(library_id)
     if not library_data:
         tk.messagebox.showerror("Error", f"Library with ID {library_id} not found.")
@@ -784,7 +768,7 @@ def view_library_info_window(parent, library_id):
     tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
 
 
-def delete_library_window(parent, library_id):
+def delete_library_window(parent, library_id) -> None:
     library_data = ctrl.get_library_info(library_id)
     if not library_data:
         tk.messagebox.showerror("Error", f"Library with ID {library_id} not found.")
@@ -795,7 +779,7 @@ def delete_library_window(parent, library_id):
     win.geometry("250x150")
     tk.Label(win, text=f"Delete {library_data['name']}?").pack(pady=20)
 
-    def confirm_delete():
+    def confirm_delete() -> None:
         success, message = ctrl.delete_library(library_id)
         if success:
             model.refresh_libraries()
@@ -807,9 +791,8 @@ def delete_library_window(parent, library_id):
     tk.Button(win, text="Confirm", command=confirm_delete).pack(pady=5)
     tk.Button(win, text="Cancel", command=win.destroy).pack(pady=5)
 
-# CRUD - Books
 
-def add_book_window(parent):
+def add_book_window(parent) -> None:
     win = tk.Toplevel(parent)
     win.title("Add Book")
     win.geometry("300x350")
@@ -836,7 +819,7 @@ def add_book_window(parent):
     entry_genre = tk.Entry(win)
     entry_genre.pack(fill="x", padx=10, pady=2)
 
-    def save_book():
+    def save_book() -> None:
         success, message = ctrl.add_book(
             title=entry_title.get().strip(),
             author=entry_author.get().strip(),
@@ -855,7 +838,7 @@ def add_book_window(parent):
     tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
-def edit_book_window(parent, book_id, selected_index=None):
+def edit_book_window(parent, book_id) -> None:
     book_data = ctrl.get_book_info(book_id)
     if not book_data:
         tk.messagebox.showerror("Error", f"Book with ID {book_id} not found.")
@@ -892,7 +875,7 @@ def edit_book_window(parent, book_id, selected_index=None):
     entry_genre.pack(fill="x", padx=10, pady=2)
     entry_genre.insert(0, book_data["genre"] or "")
 
-    def save_changes():
+    def save_changes() -> None:
         success, message = ctrl.edit_book(
             book_id=book_id,
             title=entry_title.get().strip(),
@@ -912,7 +895,7 @@ def edit_book_window(parent, book_id, selected_index=None):
     tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
-def view_book_info_window(parent, book_id):
+def view_book_info_window(parent, book_id) -> None:
     book_data = ctrl.get_book_info(book_id)
     if not book_data:
         tk.messagebox.showerror("Error", f"Book with ID {book_id} not found.")
@@ -932,7 +915,7 @@ def view_book_info_window(parent, book_id):
     tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
 
 
-def delete_book_window(parent, book_id):
+def delete_book_window(parent, book_id) -> None:
     book_data = ctrl.get_book_info(book_id)
     if not book_data:
         tk.messagebox.showerror("Error", f"Book with ID {book_id} not found.")
@@ -943,7 +926,7 @@ def delete_book_window(parent, book_id):
     win.geometry("250x150")
     tk.Label(win, text=f"Delete '{book_data['title']}'?").pack(pady=20)
 
-    def confirm_delete():
+    def confirm_delete() -> None:
         success, message = ctrl.handler_delete_book(book_id)
         if success:
             model.refresh_books()
