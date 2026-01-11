@@ -95,6 +95,7 @@ def does_account_with_email_exist(email: str) -> bool:
     cursor.execute(query, (email,))
     return cursor.fetchone() is not None
 
+# Database - Inserters
 
 def insert_account(cursor, username: str, email: str, password: str) -> int:
     password_hash = hash_password(password)
@@ -150,11 +151,27 @@ def insert_person(
     cursor.execute(query, (account_id, name, surname, contact_id, address_id, role))
     return cursor.fetchone()[0]
 
-def assign_employee_to_library(
-        cursor,
-        person_id: int,
-        library_id: int
-) -> None:
+def insert_city(cursor, name: str) -> int | None:
+    if not name:
+        return None
+
+    voivodeship = scrape_voivodeship(name) or "Unknown"
+
+    try:
+        coords = scrape_coords(name)  # (lat, lon)
+    except Exception as e:
+        print(f"Failed to get coordinates for '{name}': {e}")
+        return None
+
+    query = """
+        INSERT INTO city (name, voivodeship, coords) 
+        VALUES (%s, %s, ARRAY[%s, %s]::real[])
+        RETURNING id;
+    """
+    cursor.execute(query, (name, voivodeship, coords[0], coords[1]))
+    return cursor.fetchone()[0]
+
+def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
     query = """
         INSERT INTO library_employee (person_id, library_id)
         VALUES (%s, %s)
@@ -162,6 +179,17 @@ def assign_employee_to_library(
     """
     cursor.execute(query, (person_id, library_id))
 
+# Database - Updates
+
+def update_person(cursor, person_id: int, **kwargs) -> None:
+    query = """
+            UPDATE person SET {} WHERE id = %s;
+            """.format(
+            ", ".join(f"{key} = %s" for key in kwargs.keys())
+                )
+    cursor.execute(query, (*kwargs.values(), person_id))
+
+# Database - Fetchers
 
 def simple_fetch(fetch_func, *args, **kwargs) -> list:
     original_tuple = fetch_func(*args, **kwargs)
@@ -215,25 +243,15 @@ def fetch_city_id(name: str) -> int | None:
     result = cursor.fetchone()
     return result[0] if result else None
 
-def insert_city(cursor, name: str) -> int | None:
-    if not name:
-        return None
-
-    voivodeship = scrape_voivodeship(name) or "Unknown"
-
-    try:
-        coords = scrape_coords(name)  # (lat, lon)
-    except Exception as e:
-        print(f"Failed to get coordinates for '{name}': {e}")
-        return None
-
+def fetch_person_id(name: str, surname: str) -> int | None:
     query = """
-        INSERT INTO city (name, voivodeship, coords) 
-        VALUES (%s, %s, ARRAY[%s, %s]::real[])
-        RETURNING id;
-    """
-    cursor.execute(query, (name, voivodeship, coords[0], coords[1]))
-    return cursor.fetchone()[0]
+            SELECT id
+            FROM person
+            WHERE name = %s AND surname = %s; \
+            """
+    cursor.execute(query, (name, surname))
+
+
 
 def register_account_person(
     username: str,
@@ -311,4 +329,6 @@ def login_account(
 
 if __name__ == "__main__":
     print("Running controller.py")
-    print(fetch_people(role="client"))
+    #print(fetch_people(role="client"))
+    print(update_person(cursor, 12, surname="Test"))
+    connection.commit()

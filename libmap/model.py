@@ -62,21 +62,32 @@ def refresh_all() -> None:
     refresh_libraries()
 
 
+def get_people_dict():
+    return people
 def get_people_list():
-    return [f"{p['name']} {p['surname']} ({p['role']})" for p in people.values()]
+    return list(people.values())
 
 
+def get_books_dict():
+    return books
 def get_books_list():
-    return [f"{b['title']} by {b['author']}" for b in books.values()]
+    return list(books.values())
 
 
+def get_libraries_dict():
+    return libraries
 def get_libraries_list():
-    return [l['name'] for l in libraries.values()]
+    return list(libraries.values())
 
 
 if __name__ == '__main__':
     refresh_all()
 
+    print("People:", get_people_dict().values())
     print("People:", get_people_list())
-    print("Books:", get_books_list())
-    print("Libraries:", get_libraries_list())
+
+    print("Books", get_books_dict().values())
+    print("Books", get_books_list())
+
+    print("Libraries", get_libraries_dict().values())
+    print("Libraries", get_libraries_list())

@@ -276,12 +276,9 @@ class LeftToolbar(Frame):
         self.mode_frame = tk.Frame(self, bg='lightgray')
         self.mode_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 
-        tk.Button(self.mode_frame, text="People",
-                  command=lambda: self.switch_mode("People")).pack(side="left", padx=2)
-        tk.Button(self.mode_frame, text="Books",
-                  command=lambda: self.switch_mode("Books")).pack(side="left", padx=2)
-        tk.Button(self.mode_frame, text="Libraries",
-                  command=lambda: self.switch_mode("Libraries")).pack(side="left", padx=2)
+        tk.Button(self.mode_frame, text="People", command=lambda: self.switch_mode("People")).pack(side="left", padx=2)
+        tk.Button(self.mode_frame, text="Books", command=lambda: self.switch_mode("Books")).pack(side="left", padx=2)
+        tk.Button(self.mode_frame, text="Libraries", command=lambda: self.switch_mode("Libraries")).pack(side="left", padx=2)
 
         self.info_frame = tk.Frame(self, bg='lightgray')
         self.info_frame.grid(row=1, column=0, sticky="ew", padx=5)
@@ -289,8 +286,7 @@ class LeftToolbar(Frame):
         self.current_mode_label = tk.Label(self.info_frame, text=self.current_mode)
         self.current_mode_label.pack(side="left")
 
-        tk.Button(self.info_frame, text="Refresh",
-                  command=lambda: model.refresh_all()).pack(side="right")
+        tk.Button(self.info_frame, text="Refresh", command=lambda: model.refresh_all()).pack(side="right")
 
         self.list_frame = tk.Frame(self, bg='lightgray')
         self.list_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
@@ -299,21 +295,38 @@ class LeftToolbar(Frame):
 
         self.buttons_frame = tk.Frame(self, bg='lightgray')
         self.buttons_frame.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
+        self.items = []
+
 
     def switch_mode(self, mode):
         self.current_mode = mode
         self.current_mode_label.config(text=mode)
+        self.items = []
+        display_items = []
 
         if mode == "People":
-            items = model.get_people_list()
+            self.items = model.get_people_list()
+            display_items = [
+                f"{p['name']} {p['surname']} ({p['role']})"
+                for p in self.items
+            ]
         elif mode == "Books":
-            items = model.get_books_list()
+            self.items= model.get_books_list()
+            display_items = [
+                f"{p['title']} by {p['author']}"
+                for p in self.items
+            ]
         elif mode == "Libraries":
-            items = model.get_libraries_list()
+            self.items= model.get_libraries_list()
+            display_items = [
+                f"{p['name']}"
+                for p in self.items
+            ]
         else:
-            items = []
+            self.items = []
 
-        self.create_list(items)
+
+        self.create_list(display_items)
         self.create_mode_buttons(mode)
 
     def create_mode_buttons(self, mode):
@@ -338,11 +351,29 @@ class LeftToolbar(Frame):
             if action == "Add":
                 add_person_window(self)
             elif action == "Edit":
-                edit_person_window(self, selected_id)
+                edit_person_window(self, selected_id, selected_index)
             elif action == "View Info":
-                view_person_info_window(self, selected_id)
+                view_person_info_window(self, selected_id, selected_index)
             elif action == "Delete":
-                delete_person_window(self, selected_id)
+                delete_person_window(self, selected_id, selected_index)
+        if mode == "Libraries":
+            if action == "Add":
+                add_library_window(self)
+            elif action == "Edit":
+                edit_library_window(self, selected_id, selected_index)
+            elif action == "View Info":
+                view_library_info_window(self, selected_id, selected_index)
+            elif action == "Delete":
+                delete_library_window(self, selected_id, selected_index)
+        if mode == "Books":
+            if action == "Add":
+                add_book_window(self)
+            elif action == "Edit":
+                edit_book_window(self, selected_id, selected_index)
+            elif action == "View Info":
+                view_book_info_window(self, selected_id, selected_index)
+            elif action == "Delete":
+                delete_book_window(self, selected_id, selected_index)
 
         elif mode == "Libraries":
             print(f"{action} Library (not implemented yet)")
@@ -392,12 +423,13 @@ def add_person_window(parent):
     tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
-def edit_person_window(parent, person_id=None):
+def edit_person_window(parent, selected_id, selected_index):
     win = tk.Toplevel(parent)
     win.title("Edit Person")
     win.geometry("300x350")
 
-    tk.Label(win, text=f"Edit Person (ID: {person_id})", font=("Arial", 12, "bold")).pack(pady=10)
+    tk.Label(win, text=f"Edit Person").pack(pady=10)
+    print()
 
     tk.Label(win, text="Name:").pack(anchor="w", padx=10)
     entry_name = tk.Entry(win)
@@ -411,16 +443,16 @@ def edit_person_window(parent, person_id=None):
     entry_role = tk.Entry(win)
     entry_role.pack(fill="x", padx=10, pady=2)
 
-    tk.Button(win, text="Update", command=lambda: print(f"Edit person {person_id} logic here")).pack(pady=15)
+    tk.Button(win, text="Update", command=lambda: print(f"Edit person {selected_id} logic here")).pack(pady=15)
     tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
-def view_person_info_window(parent, person_id=None):
+def view_person_info_window(parent, selected_id, selected_index):
     win = tk.Toplevel(parent)
     win.title("View Person Info")
     win.geometry("300x300")
 
-    tk.Label(win, text=f"Person Info (ID: {person_id})", font=("Arial", 12, "bold")).pack(pady=10)
+    tk.Label(win, text=f"Person Info (ID: {selected_id})", font=("Arial", 12, "bold")).pack(pady=10)
 
     # Dummy placeholders (replace with real data)
     tk.Label(win, text="Name: John").pack(anchor="w", padx=10, pady=2)
@@ -430,14 +462,46 @@ def view_person_info_window(parent, person_id=None):
     tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
 
 
-def delete_person_window(parent, person_id=None):
+def delete_person_window(parent, selected_id, selected_index):
     win = tk.Toplevel(parent)
     win.title("Delete Person")
     win.geometry("250x150")
 
-    tk.Label(win, text=f"Delete Person (ID: {person_id})?").pack(pady=20)
-    tk.Button(win, text="Confirm", command=lambda: print(f"Delete person {person_id} logic here")).pack(pady=5)
+    tk.Label(win, text=f"Delete Person (ID: {selected_id})?").pack(pady=20)
+    tk.Button(win, text="Confirm", command=lambda: print(f"Delete person {selected_id} logic here")).pack(pady=5)
     tk.Button(win, text="Cancel", command=win.destroy).pack(pady=5)
+
+def add_library_window(parent):
+    win = tk.Toplevel(parent)
+    win.title("Add Library")
+    win.geometry("300x350")
+
+def edit_library_window(parent, selected_id, selected_index):
+    win = tk.Toplevel(parent)
+    win.title("Edit Library")
+
+def view_library_info_window(parent, selected_id, selected_index):
+    print("ID", selected_id)
+    print("index", selected_index)
+    pass
+
+def delete_library_window(parent, selected_id):
+    pass
+
+def add_book_window(parent):
+    win = tk.Toplevel(parent)
+    win.title("Add Book")
+    win.geometry("300x350")
+
+def edit_book_window(parent, book_id, selected_index):
+    win = tk.Toplevel(parent)
+    win.title("Edit Book")
+
+def view_book_info_window(parent, book_id=None):
+    pass
+
+def delete_book_window(parent, book_id=None):
+    pass
 
 
 while app_state != available_states[0]:
