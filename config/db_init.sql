@@ -53,7 +53,7 @@ CREATE TABLE person (
     surname text NOT NULL,
     contact_id INT REFERENCES contact(id) ON DELETE SET NULL,
     address_id INT REFERENCES address(id) ON DELETE SET NULL,
-    role text NOT NULL CHECK (role IN ('employee', 'client'))
+    role text NOT NULL DEFAULT 'client' CHECK (role IN ('employee', 'client'))
 );
 
 

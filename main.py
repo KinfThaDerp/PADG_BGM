@@ -18,6 +18,7 @@ def change_app_state(window, state:int):
         raise Exception("Failed to change App State!")
 
 def go_to_login(window):
+    model.set_account(None)
     change_app_state(window, 1)
 def go_to_registry(window):
     change_app_state(window, 2)
@@ -49,8 +50,9 @@ def handle_register(root, **entries):
         street=entries["street"].get().strip() if entries.get("street") else None,
         building=entries["building"].get().strip() if entries.get("building") else None,
         apartment=entries["apartment"].get().strip() if entries.get("apartment") else None,
+        model=model
     )
-
+    print(model.account_id)
 
     if success:
         go_to_login(root)
@@ -58,12 +60,13 @@ def handle_register(root, **entries):
         tk.messagebox.showerror("Error", message)
 
 def handle_login(root, **entries):
-    success, message = ctrl.login_account(
+    success, message, account_id = ctrl.login_account(
         username=entries["username"].get().strip(),
         password=entries["password"].get().strip(),
     )
 
     if success:
+        model.set_account(account_id)
         go_to_map(root)
     else:
         tk.messagebox.showerror("Error", message)
@@ -141,7 +144,7 @@ def register_window():
     entry_confirm_password = tk.Entry(frame_registry, show="*")
     entry_confirm_password.grid(row=4, column=1)
 
-    label_optional = tk.Label(frame_registry,text="Optional")
+    label_optional = tk.Label(frame_registry)
     label_optional.grid(row=5, column=0, columnspan=2,pady=3)
 
 
@@ -228,12 +231,7 @@ def map_window():
     sidebar = LeftToolbar(root_map)
     sidebar.toggle_visibility()
 
-    model.refresh_people()
-    model.refresh_libraries()
-    model.refresh_books()
-
-
-
+    model.refresh_all()
 
     toggle_button = tk.Button(
         toolbar_frame,
@@ -301,8 +299,10 @@ class LeftToolbar(Frame):
     def switch_mode(self, mode):
         self.current_mode = mode
         self.current_mode_label.config(text=mode)
+
         self.items = []
         display_items = []
+        ids = []
 
         if mode == "People":
             self.items = model.get_people_list()
@@ -310,23 +310,23 @@ class LeftToolbar(Frame):
                 f"{p['name']} {p['surname']} ({p['role']})"
                 for p in self.items
             ]
+            ids = [p['id'] for p in self.items]
+
         elif mode == "Books":
-            self.items= model.get_books_list()
+            self.items = model.get_books_list()
             display_items = [
-                f"{p['title']} by {p['author']}"
-                for p in self.items
+                f"{p['title']} by {p['author']}" for p in self.items
             ]
+            ids = [p['id'] for p in self.items]
+
         elif mode == "Libraries":
-            self.items= model.get_libraries_list()
+            self.items = model.get_libraries_list()
             display_items = [
-                f"{p['name']}"
-                for p in self.items
+                f"{p['name']}" for p in self.items
             ]
-        else:
-            self.items = []
+            ids = [p['id'] for p in self.items]
 
-
-        self.create_list(display_items)
+        self.create_list(display_items, ids)
         self.create_mode_buttons(mode)
 
     def create_mode_buttons(self, mode):
@@ -342,51 +342,46 @@ class LeftToolbar(Frame):
 
     def handle_action(self, mode, action):
         selected_id = None
-
         if self.listbox and self.listbox.curselection():
             selected_index = self.listbox.curselection()[0]
-            selected_id = self.listbox.get(selected_index)
+            selected_id = self.listbox_ids[selected_index]
 
         if mode == "People":
             if action == "Add":
                 add_person_window(self)
             elif action == "Edit":
-                edit_person_window(self, selected_id, selected_index)
+                edit_person_window(self, selected_id)
             elif action == "View Info":
-                view_person_info_window(self, selected_id, selected_index)
+                view_person_info_window(self, selected_id)
             elif action == "Delete":
-                delete_person_window(self, selected_id, selected_index)
-        if mode == "Libraries":
+                delete_person_window(self, selected_id)
+        elif mode == "Libraries":
             if action == "Add":
                 add_library_window(self)
             elif action == "Edit":
-                edit_library_window(self, selected_id, selected_index)
+                edit_library_window(self, selected_id)
             elif action == "View Info":
-                view_library_info_window(self, selected_id, selected_index)
+                view_library_info_window(self, selected_id)
             elif action == "Delete":
-                delete_library_window(self, selected_id, selected_index)
-        if mode == "Books":
+                delete_library_window(self, selected_id)
+        elif mode == "Books":
             if action == "Add":
                 add_book_window(self)
             elif action == "Edit":
-                edit_book_window(self, selected_id, selected_index)
+                edit_book_window(self, selected_id)
             elif action == "View Info":
-                view_book_info_window(self, selected_id, selected_index)
+                view_book_info_window(self, selected_id)
             elif action == "Delete":
-                delete_book_window(self, selected_id, selected_index)
+                delete_book_window(self, selected_id)
 
-        elif mode == "Libraries":
-            print(f"{action} Library (not implemented yet)")
-
-        elif mode == "Books":
-            print(f"{action} Book (not implemented yet)")
-
-    def create_list(self, items):
+    def create_list(self, items, ids=None):
         if self.listbox:
             self.listbox.destroy()
 
         self.listbox = tk.Listbox(self.list_frame)
         self.listbox.pack(fill="both", expand=True)
+
+        self.listbox_ids = ids or []
 
         for item in items:
             self.listbox.insert(tk.END, item)
@@ -403,33 +398,9 @@ class LeftToolbar(Frame):
 def add_person_window(parent):
     win = tk.Toplevel(parent)
     win.title("Add Person")
-    win.geometry("300x350")
+    win.geometry("300x400")
 
-    tk.Label(win, text="Add New Person").pack(pady=10)
-
-    tk.Label(win, text="Name:").pack(anchor="w", padx=10)
-    entry_name = tk.Entry(win)
-    entry_name.pack(fill="x", padx=10, pady=2)
-
-    tk.Label(win, text="Surname:").pack(anchor="w", padx=10)
-    entry_surname = tk.Entry(win)
-    entry_surname.pack(fill="x", padx=10, pady=2)
-
-    tk.Label(win, text="Role:").pack(anchor="w", padx=10)
-    entry_role = tk.Entry(win)
-    entry_role.pack(fill="x", padx=10, pady=2)
-
-    tk.Button(win, text="Save", command=lambda: print("Add person logic here")).pack(pady=15)
-    tk.Button(win, text="Cancel", command=win.destroy).pack()
-
-
-def edit_person_window(parent, selected_id, selected_index):
-    win = tk.Toplevel(parent)
-    win.title("Edit Person")
-    win.geometry("300x350")
-
-    tk.Label(win, text=f"Edit Person").pack(pady=10)
-    print()
+    tk.Label(win, text="Add New Person", font=("Arial", 12, "bold")).pack(pady=10)
 
     tk.Label(win, text="Name:").pack(anchor="w", padx=10)
     entry_name = tk.Entry(win)
@@ -439,36 +410,186 @@ def edit_person_window(parent, selected_id, selected_index):
     entry_surname = tk.Entry(win)
     entry_surname.pack(fill="x", padx=10, pady=2)
 
-    tk.Label(win, text="Role:").pack(anchor="w", padx=10)
-    entry_role = tk.Entry(win)
-    entry_role.pack(fill="x", padx=10, pady=2)
+    tk.Label(win, text="City:").pack(anchor="w", padx=10)
+    entry_city = tk.Entry(win)
+    entry_city.pack(fill="x", padx=10, pady=2)
 
-    tk.Button(win, text="Update", command=lambda: print(f"Edit person {selected_id} logic here")).pack(pady=15)
+    address_frame = tk.Frame(win)
+    address_frame.pack(fill="x", padx=10, pady=10)
+
+    address_frame.grid_columnconfigure(0, weight=1)
+    address_frame.grid_columnconfigure(1, weight=1)
+    address_frame.grid_columnconfigure(2, weight=1)
+
+    tk.Label(address_frame, text="Street:").grid(row=0, column=0, padx=5)
+    entry_street = tk.Entry(address_frame)
+    entry_street.grid(row=1, column=0, padx=5, pady=2, sticky="ew")
+
+    tk.Label(address_frame, text="Building:").grid(row=0, column=1, padx=5)
+    entry_building = tk.Entry(address_frame)
+    entry_building.grid(row=1, column=1, padx=5, pady=2, sticky="ew")
+
+    tk.Label(address_frame, text="Apartment:").grid(row=0, column=2, padx=5)
+    entry_apartment = tk.Entry(address_frame)
+    entry_apartment.grid(row=1, column=2, padx=5, pady=2, sticky="ew")
+
+    def save_person():
+        success, message = ctrl.add_person(
+            name=entry_name.get().strip(),
+            surname=entry_surname.get().strip(),
+            account_id=model.get_account(),
+            phone_number=None,
+            email=None,
+            city=entry_city.get().strip(),
+            street=entry_street.get().strip(),
+            building=entry_building.get().strip(),
+            apartment=entry_apartment.get().strip(),
+        )
+
+        if success:
+            model.refresh_people()
+            parent.switch_mode("People")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Save", command=save_person).pack(pady=15)
     tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
-def view_person_info_window(parent, selected_id, selected_index):
+def edit_person_window(parent, person_id):
+    people_dict = model.get_people_dict()
+    person_data = people_dict.get(person_id)
+
+    if not person_data:
+        tk.messagebox.showerror("Error", f"Person with ID {person_id} not found.")
+        return
+    print(person_id)
+    print(person_data)
     win = tk.Toplevel(parent)
-    win.title("View Person Info")
-    win.geometry("300x300")
+    win.title("Add Person")
+    win.geometry("300x400")
 
-    tk.Label(win, text=f"Person Info (ID: {selected_id})", font=("Arial", 12, "bold")).pack(pady=10)
+    tk.Label(win, text="Edit Person", font=("Arial", 12, "bold")).pack(pady=10)
 
-    # Dummy placeholders (replace with real data)
-    tk.Label(win, text="Name: John").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text="Surname: Doe").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text="Role: Client").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text="Name:").pack(anchor="w", padx=10)
+    entry_name = tk.Entry(win)
+    entry_name.pack(fill="x", padx=10, pady=2)
+    entry_name.insert(0, person_data.get("name", ""))
+
+    tk.Label(win, text="Surname:").pack(anchor="w", padx=10)
+    entry_surname = tk.Entry(win)
+    entry_surname.pack(fill="x", padx=10, pady=2)
+    entry_surname.insert(0, person_data.get("surname", ""))
+
+    tk.Label(win, text="City:").pack(anchor="w", padx=10)
+    entry_city = tk.Entry(win)
+    entry_city.pack(fill="x", padx=10, pady=2)
+
+    address_id = person_data.get("address_id")
+    if address_id:
+        city_name = ctrl.fetch_city(person_id)
+        entry_city.insert(0, city_name or "")
+
+    address_frame = tk.Frame(win)
+    address_frame.pack(fill="x", padx=10, pady=10)
+
+    address_frame.grid_columnconfigure(0, weight=1)
+    address_frame.grid_columnconfigure(1, weight=1)
+    address_frame.grid_columnconfigure(2, weight=1)
+
+    address = ctrl.fetch_address(person_data.get("address_id"))
+
+    tk.Label(address_frame, text="Street:").grid(row=0, column=0, padx=5)
+    entry_street = tk.Entry(address_frame)
+    entry_street.grid(row=1, column=0, padx=5, pady=2, sticky="ew")
+    if address_id:
+        street_name = address[1]
+        entry_street.insert(0, street_name or "")
+
+    tk.Label(address_frame, text="Building:").grid(row=0, column=1, padx=5)
+    entry_building = tk.Entry(address_frame)
+    entry_building.grid(row=1, column=1, padx=5, pady=2, sticky="ew")
+    if address_id:
+        building_nr = address[2]
+        entry_building.insert(0, building_nr or "")
+
+    tk.Label(address_frame, text="Apartment:").grid(row=0, column=2, padx=5)
+    entry_apartment = tk.Entry(address_frame)
+    entry_apartment.grid(row=1, column=2, padx=5, pady=2, sticky="ew")
+    if  address_id:
+        apartment_nr = address[3]
+        entry_apartment.insert(0, apartment_nr or "")
+
+    def save_changes():
+        success, message = ctrl.edit_person(
+            person_id=person_id,
+            name=entry_name.get().strip(),
+            surname=entry_surname.get().strip(),
+            phone_number=None,  # could fetch old value if not changed
+            email=None,  # same here
+            city=entry_city.get().strip(),
+            street=entry_street.get().strip(),
+            building=entry_building.get().strip(),
+            apartment=entry_apartment.get().strip(),
+        )
+
+        if success:
+            model.refresh_people()
+            parent.switch_mode("People")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Save", command=save_changes).pack(pady=15)
+    tk.Button(win, text="Cancel", command=win.destroy).pack()
+
+
+def view_person_info_window(parent, person_id):
+    person_data = ctrl.get_person_info(person_id)
+    if not person_data:
+        tk.messagebox.showerror("Error", f"Person with ID {person_id} not found.")
+        return
+
+    win = tk.Toplevel(parent)
+    win.title(f"View Person Info (ID: {person_id})")
+    win.geometry("350x300")
+
+    tk.Label(win, text=f"Person Info", font=("Arial", 12, "bold")).pack(pady=10)
+    tk.Label(win, text=f"Name: {person_data['name']}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Surname: {person_data['surname']}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Role: {person_data['role']}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Phone: {person_data['phone_number'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Email: {person_data['email'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"City: {person_data['city'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Street: {person_data['street'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Building: {person_data['building'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Apartment: {person_data['apartment'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
 
     tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
 
 
-def delete_person_window(parent, selected_id, selected_index):
+def delete_person_window(parent, person_id):
+    person_data = ctrl.get_person_info(person_id)
+    if not person_data:
+        tk.messagebox.showerror("Error", f"Person with ID {person_id} not found.")
+        return
+
     win = tk.Toplevel(parent)
     win.title("Delete Person")
     win.geometry("250x150")
+    tk.Label(win, text=f"Delete {person_data['name']} {person_data['surname']}?").pack(pady=20)
 
-    tk.Label(win, text=f"Delete Person (ID: {selected_id})?").pack(pady=20)
-    tk.Button(win, text="Confirm", command=lambda: print(f"Delete person {selected_id} logic here")).pack(pady=5)
+    def confirm_delete():
+        success, message = ctrl.delete_person(person_id)
+        if success:
+            model.refresh_people()
+            parent.switch_mode("People")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Confirm", command=confirm_delete).pack(pady=5)
     tk.Button(win, text="Cancel", command=win.destroy).pack(pady=5)
 
 def add_library_window(parent):
