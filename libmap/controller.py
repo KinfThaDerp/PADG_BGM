@@ -317,18 +317,33 @@ def fetch_contact(contact_id: int) -> tuple | None:
            FROM contact 
            WHERE id = %s
             """
-
-
     cursor.execute(query, (contact_id,))
     return cursor.fetchone()
 
-def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
+def fetch_library_client_ids(library_id: int) -> list[int]:
+    query = "SELECT person_id FROM library_client WHERE library_id = %s;"
+    cursor.execute(query, (library_id,))
+    return [row[0] for row in cursor.fetchall()]
+
+def fetch_library_employee_ids(library_id: int) -> list[int]:
+    query = "SELECT person_id FROM library_employee WHERE library_id = %s;"
+    cursor.execute(query, (library_id,))
+    return [row[0] for row in cursor.fetchall()]
+
+def insert_assignment_employee_library(cursor, person_id: int, library_id: int) -> None:
+    delete_query = """
+                   DELETE FROM library_client 
+                   WHERE person_id = %s AND library_id = %s;
+                   """
+    cursor.execute(delete_query, (person_id, library_id))
+
     query = """
             INSERT INTO library_employee (person_id, library_id)
             VALUES (%s, %s)
             ON CONFLICT (person_id, library_id) DO NOTHING;
             """
     cursor.execute(query, (person_id, library_id))
+
     update_role_query = """
                         UPDATE person
                         SET role = 'employee'
@@ -336,13 +351,21 @@ def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
                         """
     cursor.execute(update_role_query, (person_id,))
 
-def assign_client_to_library(cursor, person_id: int, library_id: int) -> None:
+
+def insert_assignment_client_library(cursor, person_id: int, library_id: int) -> None:
+    delete_query = """
+                   DELETE FROM library_employee 
+                   WHERE person_id = %s AND library_id = %s;
+                   """
+    cursor.execute(delete_query, (person_id, library_id))
+
     query = """
             INSERT INTO library_client (person_id, library_id)
             VALUES (%s, %s)
             ON CONFLICT (library_id, person_id) DO NOTHING;
             """
     cursor.execute(query, (person_id, library_id))
+
     update_role_query = """
                         UPDATE person
                         SET role = 'client'
@@ -857,34 +880,24 @@ def delete_library(library_id: int) -> tuple[bool, str]:
     except Exception as e:
         return False, f"Failed to delete library: {str(e)}"
 
+def assign_client_to_library(person_id, library_id) -> tuple[bool, str]:
+    try:
+        with connection:
+            with connection.cursor() as cursor:
+                insert_assignment_client_library(cursor, person_id, library_id)
+        return True, "Registered"
+    except Exception as e:
+        return False, str(e)
 
-# Map
+def assign_employee_to_library(person_id, library_id) -> tuple[bool, str]:
+    try:
+        with connection:
+            with connection.cursor() as cursor:
+                insert_assignment_employee_library(cursor, person_id, library_id)
+        return True, "Registered"
+    except Exception as e:
+        return False, str(e)
 
-def refresh_entity_markers(
-    map_widget,
-    entities: dict[int, dict],
-    get_coords_fn,
-    get_label_fn,
-    marker_key: str
-) -> None:
-    # Remove old markers
-    for marker in map_markers[marker_key]:
-        marker.delete()
-    map_markers[marker_key].clear()
-
-    # Add new markers
-    for entity_id, entity in entities.items():
-        coords = get_coords_fn(entity_id)
-        if not coords:
-            continue
-
-        lat, lon = coords
-        marker = map_widget.set_marker(
-            lat,
-            lon,
-            text=get_label_fn(entity)
-        )
-        map_markers[marker_key].append(marker)
 
 if __name__ == "__main__":
     print("Running controller.py")
@@ -893,4 +906,4 @@ if __name__ == "__main__":
     # connection.commit()
     # login_account("KinfThaDerp", "lol123")
     # print("miasto", fetch_city(fetch_person_id("Bassamm", "Mandilii")))
-    print(fetch_address(13))
+    # print(fetch_address(13))
