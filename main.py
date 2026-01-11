@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import Frame
-
 import tkintermapview
 from libmap import controller as ctrl, model
+
 
 #  Window Directors
 
@@ -223,7 +223,6 @@ def map_window() -> None:
     toolbar_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
     toolbar_frame.grid_columnconfigure(1, weight=1)
 
-
     sidebar = LeftToolbar(root_map)
     sidebar.toggle_visibility()
 
@@ -232,26 +231,85 @@ def map_window() -> None:
     toggle_button = tk.Button(
         toolbar_frame,
         text="Show Sidebar",
-        command=lambda: [
-            sidebar.toggle_visibility(),
-            toggle_button.config(text="Show Toolbar" if not sidebar.is_visible else "Hide Toolbar")
-        ]
-    )
+        command=lambda: [sidebar.toggle_visibility(),
+            toggle_button.config(text="Show Toolbar" if not sidebar.is_visible else "Hide Toolbar")])
     toggle_button.grid(row=0, column=0, sticky="w", padx=10, pady=5)
 
     button_logout = tk.Button(
         toolbar_frame,
         text="Log out",
         command=lambda: go_to_login(root_map))
-    button_logout.grid(row=0, column=1, sticky="e", padx=10, pady=5)
+    button_logout.grid(row=0, column=3, sticky="e", padx=10, pady=5)
 
     map_widget = tkintermapview.TkinterMapView(root_map)
     map_widget.grid(row=1, column=1, sticky="nsew")
     map_widget.set_position(52.229722, 21.011667)
     map_widget.set_zoom(6)
 
+    libraries_toggle = ToggleButton(toolbar_frame, map_widget, "libraries")
+    libraries_toggle.grid(row=0, column=2, sticky="e", padx=10, pady=5)
+
+    people_toggle = ToggleButton(toolbar_frame, map_widget, "people")
+    people_toggle.grid(row=0, column=1, sticky="e", padx=10, pady=5)
+
+
     root_map.mainloop()
 
+class ToggleButton(Frame):
+    def __init__(self, parent, map_widget: tkintermapview.TkinterMapView, marker_type: str, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.map_widget = map_widget
+        self.marker_type = marker_type
+        self.markers_drawn = False
+
+        self.button = tk.Button(self, text=f"Show {marker_type}", command=self.toggle)
+        self.button.pack(fill="x")
+
+    def toggle(self):
+        if self.markers_drawn:
+            self.remove_markers()
+            self.button.config(text=f"Show {self.marker_type}")
+        else:
+            self.draw_markers()
+            self.button.config(text=f"Hide {self.marker_type}")
+        self.markers_drawn = not self.markers_drawn
+
+    def draw_markers(self):
+        self.remove_markers()
+
+        if self.marker_type == "people": data_dict = model.people
+        elif self.marker_type == "libraries": data_dict = model.libraries
+        else: return
+        print(data_dict.keys())
+        print(data_dict.values())
+        for id_, info in data_dict.items():
+
+            coords = ctrl.fetch_address(info["address_id"])[-1]
+            if not coords:
+                continue
+            lat, lon = coords
+
+            text = f"{info.get('name', '')} {info.get('surname', '')}" if self.marker_type=="people" else info.get("name", "")
+
+            # Marker with click command
+            marker = self.map_widget.set_marker(
+                lat, lon,
+                text=text,
+                command=lambda _=None, i=id_: self.on_marker_click(i)
+            )
+            model.map_markers[self.marker_type][id_] = marker
+
+    def remove_markers(self):
+        if model.map_markers[self.marker_type]:
+            for marker in model.map_markers[self.marker_type].values():
+                marker.delete()
+            model.map_markers[self.marker_type] = {}
+
+    def on_marker_click(self, id_, *_):
+        if self.marker_type == "people":
+            view_person_info_window(self, id_)
+        else:  # libraries
+            view_library_info_window(self, id_)
 
 class LeftToolbar(Frame):
     def __init__(self, parent, *args, **kwargs):

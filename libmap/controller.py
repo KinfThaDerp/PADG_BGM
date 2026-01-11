@@ -186,19 +186,7 @@ def insert_book(cursor, title: str, author: str, isbn_13: str | None, publisher:
     return cursor.fetchone()[0]
 
 
-def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
-    query = """
-            INSERT INTO library_employee (person_id, library_id)
-            VALUES (%s, %s)
-            ON CONFLICT (person_id, library_id) DO NOTHING; \
-            """
-    cursor.execute(query, (person_id, library_id))
-    update_role_query = """
-                        UPDATE person
-                        SET role = 'employee'
-                        WHERE id = %s; \
-                        """
-    cursor.execute(update_role_query, (person_id,))
+
 
 
 # Database - Updates
@@ -334,6 +322,33 @@ def fetch_contact(contact_id: int) -> tuple | None:
     cursor.execute(query, (contact_id,))
     return cursor.fetchone()
 
+def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
+    query = """
+            INSERT INTO library_employee (person_id, library_id)
+            VALUES (%s, %s)
+            ON CONFLICT (person_id, library_id) DO NOTHING;
+            """
+    cursor.execute(query, (person_id, library_id))
+    update_role_query = """
+                        UPDATE person
+                        SET role = 'employee'
+                        WHERE id = %s;
+                        """
+    cursor.execute(update_role_query, (person_id,))
+
+def assign_client_to_library(cursor, person_id: int, library_id: int) -> None:
+    query = """
+            INSERT INTO library_client (person_id, library_id)
+            VALUES (%s, %s)
+            ON CONFLICT (library_id, person_id) DO NOTHING;
+            """
+    cursor.execute(query, (person_id, library_id))
+    update_role_query = """
+                        UPDATE person
+                        SET role = 'client'
+                        WHERE id = %s;
+                        """
+    cursor.execute(update_role_query, (person_id,))
 
 def register_account_person(
     username: str,
@@ -842,6 +857,34 @@ def delete_library(library_id: int) -> tuple[bool, str]:
     except Exception as e:
         return False, f"Failed to delete library: {str(e)}"
 
+
+# Map
+
+def refresh_entity_markers(
+    map_widget,
+    entities: dict[int, dict],
+    get_coords_fn,
+    get_label_fn,
+    marker_key: str
+) -> None:
+    # Remove old markers
+    for marker in map_markers[marker_key]:
+        marker.delete()
+    map_markers[marker_key].clear()
+
+    # Add new markers
+    for entity_id, entity in entities.items():
+        coords = get_coords_fn(entity_id)
+        if not coords:
+            continue
+
+        lat, lon = coords
+        marker = map_widget.set_marker(
+            lat,
+            lon,
+            text=get_label_fn(entity)
+        )
+        map_markers[marker_key].append(marker)
 
 if __name__ == "__main__":
     print("Running controller.py")
