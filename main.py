@@ -9,6 +9,7 @@ from libmap import controller as ctrl, model
 available_states = ("Disable", "Login", "Register", "Map")
 app_state = available_states[1]
 
+
 def change_app_state(window, state:int):
     global app_state
     if 0<=state<=len(available_states):
@@ -17,13 +18,20 @@ def change_app_state(window, state:int):
     else:
         raise Exception("Failed to change App State!")
 
+
 def go_to_login(window):
     model.set_account(None)
     change_app_state(window, 1)
+
+
 def go_to_registry(window):
     change_app_state(window, 2)
+
+
 def go_to_map(window):
     change_app_state(window, 3)
+
+
 
 #  Account Handlers
 
@@ -59,6 +67,7 @@ def handle_register(root, **entries):
     else:
         tk.messagebox.showerror("Error", message)
 
+
 def handle_login(root, **entries):
     success, message, account_id = ctrl.login_account(
         username=entries["username"].get().strip(),
@@ -71,7 +80,9 @@ def handle_login(root, **entries):
     else:
         tk.messagebox.showerror("Error", message)
 
+
 #  Windows
+
 
 def login_window():
     global app_state
@@ -110,6 +121,7 @@ def login_window():
 
     root_log.mainloop()
     print()
+
 
 def register_window():
     global app_state
@@ -393,7 +405,7 @@ class LeftToolbar(Frame):
             self.grid()
         self.is_visible = not self.is_visible
 
-
+# CRUD Windows
 
 def add_person_window(parent):
     win = tk.Toplevel(parent)
@@ -464,10 +476,8 @@ def edit_person_window(parent, person_id):
     if not person_data:
         tk.messagebox.showerror("Error", f"Person with ID {person_id} not found.")
         return
-    print(person_id)
-    print(person_data)
     win = tk.Toplevel(parent)
-    win.title("Add Person")
+    win.title("Edit Person")
     win.geometry("300x400")
 
     tk.Label(win, text="Edit Person", font=("Arial", 12, "bold")).pack(pady=10)
@@ -592,34 +602,225 @@ def delete_person_window(parent, person_id):
     tk.Button(win, text="Confirm", command=confirm_delete).pack(pady=5)
     tk.Button(win, text="Cancel", command=win.destroy).pack(pady=5)
 
+
 def add_library_window(parent):
     win = tk.Toplevel(parent)
     win.title("Add Library")
-    win.geometry("300x350")
+    win.geometry("300x400")
 
-def edit_library_window(parent, selected_id, selected_index):
+    tk.Label(win, text="Add New Library", font=("Arial", 12, "bold")).pack(pady=10)
+
+    tk.Label(win, text="Name:").pack(anchor="w", padx=10)
+    entry_name = tk.Entry(win)
+    entry_name.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="Phone Number:").pack(anchor="w", padx=10)
+    entry_phone_number = tk.Entry(win)
+    entry_phone_number.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="E-mail:").pack(anchor="w", padx=10)
+    entry_email = tk.Entry(win)
+    entry_email.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="City:").pack(anchor="w", padx=10)
+    entry_city = tk.Entry(win)
+    entry_city.pack(fill="x", padx=10, pady=2)
+
+    address_frame = tk.Frame(win)
+    address_frame.pack(fill="x", padx=10, pady=10)
+
+    address_frame.grid_columnconfigure(0, weight=1)
+    address_frame.grid_columnconfigure(1, weight=1)
+    address_frame.grid_columnconfigure(2, weight=1)
+
+    tk.Label(address_frame, text="Street:").grid(row=0, column=0, padx=5)
+    entry_street = tk.Entry(address_frame)
+    entry_street.grid(row=1, column=0, padx=5, pady=2, sticky="ew")
+
+    tk.Label(address_frame, text="Building:").grid(row=0, column=1, padx=5)
+    entry_building = tk.Entry(address_frame)
+    entry_building.grid(row=1, column=1, padx=5, pady=2, sticky="ew")
+
+    tk.Label(address_frame, text="Apartment:").grid(row=0, column=2, padx=5)
+    entry_apartment = tk.Entry(address_frame)
+    entry_apartment.grid(row=1, column=2, padx=5, pady=2, sticky="ew")
+
+    def save_library():
+        success, message = ctrl.add_library(
+            name=entry_name.get().strip(),
+            city=entry_city.get().strip(),
+            street=entry_street.get().strip(),
+            building=entry_building.get().strip(),
+            apartment=entry_apartment.get().strip(),
+            phone_number=entry_phone_number.get().strip(),
+            email=entry_email.get().strip(),
+        )
+
+        if success:
+            model.refresh_libraries()
+            parent.switch_mode("Libraries")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Save", command=save_library).pack(pady=15)
+    tk.Button(win, text="Cancel", command=win.destroy).pack()
+
+def edit_library_window(parent, library_id):
+    library_dict = model.get_libraries_dict()
+    library_data = library_dict.get(library_id)
+
+    if not library_data:
+        tk.messagebox.showerror("Error", f"Library with ID {library_id} not found.")
+        return
+
     win = tk.Toplevel(parent)
     win.title("Edit Library")
+    win.geometry("300x400")
 
-def view_library_info_window(parent, selected_id, selected_index):
-    print("ID", selected_id)
-    print("index", selected_index)
-    pass
+    tk.Label(win, text="Edit Library", font=("Arial", 12, "bold")).pack(pady=10)
 
-def delete_library_window(parent, selected_id):
-    pass
+    tk.Label(win, text="Name:").pack(anchor="w", padx=10)
+    entry_name = tk.Entry(win)
+    entry_name.pack(fill="x", padx=10, pady=2)
+    entry_name.insert(0, library_data.get("name", ""))
+
+
+    tk.Label(win, text="Phone Number:").pack(anchor="w", padx=10)
+    entry_phone_number = tk.Entry(win)
+    entry_phone_number.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="E-mail:").pack(anchor="w", padx=10)
+    entry_email = tk.Entry(win)
+    entry_email.pack(fill="x", padx=10, pady=2)
+
+    contact_id = library_data.get("contact_id")
+    if contact_id:
+        phone_number, email = ctrl.fetch_contact(contact_id)
+        entry_phone_number.insert(0, phone_number or "")
+        entry_email.insert(0, email or "")
+
+    tk.Label(win, text="City:").pack(anchor="w", padx=10)
+    entry_city = tk.Entry(win)
+    entry_city.pack(fill="x", padx=10, pady=2)
+
+    address_id = library_data.get("address_id")
+    if address_id:
+        address = ctrl.fetch_address(address_id)
+        entry_city.insert(0, address[0] or "")
+
+    address_frame = tk.Frame(win)
+    address_frame.pack(fill="x", padx=10, pady=10)
+
+    address_frame.grid_columnconfigure(0, weight=1)
+    address_frame.grid_columnconfigure(1, weight=1)
+    address_frame.grid_columnconfigure(2, weight=1)
+
+    address = ctrl.fetch_address(library_data.get("address_id"))
+
+    tk.Label(address_frame, text="Street:").grid(row=0, column=0, padx=5)
+    entry_street = tk.Entry(address_frame)
+    entry_street.grid(row=1, column=0, padx=5, pady=2, sticky="ew")
+    if address_id:
+        street_name = address[1]
+        entry_street.insert(0, street_name or "")
+
+    tk.Label(address_frame, text="Building:").grid(row=0, column=1, padx=5)
+    entry_building = tk.Entry(address_frame)
+    entry_building.grid(row=1, column=1, padx=5, pady=2, sticky="ew")
+    if address_id:
+        building_nr = address[2]
+        entry_building.insert(0, building_nr or "")
+
+    tk.Label(address_frame, text="Apartment:").grid(row=0, column=2, padx=5)
+    entry_apartment = tk.Entry(address_frame)
+    entry_apartment.grid(row=1, column=2, padx=5, pady=2, sticky="ew")
+    if  address_id:
+        apartment_nr = address[3]
+        entry_apartment.insert(0, apartment_nr or "")
+
+    def save_changes():
+        success, message = ctrl.edit_library(
+            library_id=library_id,
+            name=entry_name.get().strip(),
+            city=entry_city.get().strip(),
+            street=entry_street.get().strip(),
+            building=entry_building.get().strip(),
+            apartment=entry_apartment.get().strip(),
+            phone_number=None,
+            email=None,
+        )
+
+        if success:
+            model.refresh_libraries()
+            parent.switch_mode("Libraries")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Save", command=save_changes).pack(pady=15)
+    tk.Button(win, text="Cancel", command=win.destroy).pack()
+
+
+def view_library_info_window(parent, library_id):
+    library_data = ctrl.get_library_info(library_id)
+    if not library_data:
+        tk.messagebox.showerror("Error", f"Library with ID {library_id} not found.")
+        return
+
+    win = tk.Toplevel(parent)
+    win.title(f"View Library Info (ID: {library_id})")
+    win.geometry("350x300")
+
+    tk.Label(win, text="Library Info", font=("Arial", 12, "bold")).pack(pady=10)
+    tk.Label(win, text=f"Name: {library_data['name']}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Phone: {library_data['phone_number'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Email: {library_data['email'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"City: {library_data['city'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Street: {library_data['street'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Building: {library_data['building'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Apartment: {library_data['apartment'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+
+    tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
+
+
+def delete_library_window(parent, library_id):
+    library_data = ctrl.get_library_info(library_id)
+    if not library_data:
+        tk.messagebox.showerror("Error", f"Library with ID {library_id} not found.")
+        return
+
+    win = tk.Toplevel(parent)
+    win.title("Delete Library")
+    win.geometry("250x150")
+    tk.Label(win, text=f"Delete {library_data['name']}?").pack(pady=20)
+
+    def confirm_delete():
+        success, message = ctrl.delete_library(library_id)
+        if success:
+            model.refresh_libraries()
+            parent.switch_mode("Libraries")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Confirm", command=confirm_delete).pack(pady=5)
+    tk.Button(win, text="Cancel", command=win.destroy).pack(pady=5)
 
 def add_book_window(parent):
     win = tk.Toplevel(parent)
     win.title("Add Book")
     win.geometry("300x350")
 
+
 def edit_book_window(parent, book_id, selected_index):
     win = tk.Toplevel(parent)
     win.title("Edit Book")
 
+
 def view_book_info_window(parent, book_id=None):
     pass
+
 
 def delete_book_window(parent, book_id=None):
     pass
