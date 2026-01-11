@@ -187,11 +187,18 @@ def insert_book(cursor, title: str, author: str, isbn_13: str | None, publisher:
 
 def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
     query = """
-        INSERT INTO library_employee (person_id, library_id)
-        VALUES (%s, %s)
-        ON CONFLICT (person_id, library_id) DO NOTHING;
-    """
+            INSERT INTO library_employee (person_id, library_id)
+            VALUES (%s, %s)
+            ON CONFLICT (person_id, library_id) DO NOTHING; \
+            """
     cursor.execute(query, (person_id, library_id))
+
+    update_role_query = """
+                        UPDATE person
+                        SET role = 'employee'
+                        WHERE id = %s; \
+                        """
+    cursor.execute(update_role_query, (person_id,))
 
 # Database - Updates
 
@@ -705,7 +712,7 @@ def get_book_info(book_id: int) -> dict | None:
         return None
 
 
-def delete_book(book_id: int) -> tuple[bool, str]:
+def handler_delete_book(book_id: int) -> tuple[bool, str]:
     book = fetch_book(book_id)
     if not book:
         return False, "Book not found"

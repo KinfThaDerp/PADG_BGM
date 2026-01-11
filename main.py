@@ -807,23 +807,153 @@ def delete_library_window(parent, library_id):
     tk.Button(win, text="Confirm", command=confirm_delete).pack(pady=5)
     tk.Button(win, text="Cancel", command=win.destroy).pack(pady=5)
 
+# CRUD - Books
+
 def add_book_window(parent):
     win = tk.Toplevel(parent)
     win.title("Add Book")
     win.geometry("300x350")
 
+    tk.Label(win, text="Add New Book", font=("Arial", 12, "bold")).pack(pady=10)
 
-def edit_book_window(parent, book_id, selected_index):
+    tk.Label(win, text="Title:").pack(anchor="w", padx=10)
+    entry_title = tk.Entry(win)
+    entry_title.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="Author:").pack(anchor="w", padx=10)
+    entry_author = tk.Entry(win)
+    entry_author.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="ISBN-13:").pack(anchor="w", padx=10)
+    entry_isbn = tk.Entry(win)
+    entry_isbn.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="Publisher:").pack(anchor="w", padx=10)
+    entry_publisher = tk.Entry(win)
+    entry_publisher.pack(fill="x", padx=10, pady=2)
+
+    tk.Label(win, text="Genre:").pack(anchor="w", padx=10)
+    entry_genre = tk.Entry(win)
+    entry_genre.pack(fill="x", padx=10, pady=2)
+
+    def save_book():
+        success, message = ctrl.add_book(
+            title=entry_title.get().strip(),
+            author=entry_author.get().strip(),
+            isbn_13=entry_isbn.get().strip() or None,
+            publisher=entry_publisher.get().strip() or None,
+            genre=entry_genre.get().strip() or None
+        )
+        if success:
+            model.refresh_books()
+            parent.switch_mode("Books")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Save", command=save_book).pack(pady=15)
+    tk.Button(win, text="Cancel", command=win.destroy).pack()
+
+
+def edit_book_window(parent, book_id, selected_index=None):
+    book_data = ctrl.get_book_info(book_id)
+    if not book_data:
+        tk.messagebox.showerror("Error", f"Book with ID {book_id} not found.")
+        return
+
     win = tk.Toplevel(parent)
     win.title("Edit Book")
+    win.geometry("300x350")
+
+    tk.Label(win, text="Edit Book", font=("Arial", 12, "bold")).pack(pady=10)
+
+    tk.Label(win, text="Title:").pack(anchor="w", padx=10)
+    entry_title = tk.Entry(win)
+    entry_title.pack(fill="x", padx=10, pady=2)
+    entry_title.insert(0, book_data["title"])
+
+    tk.Label(win, text="Author:").pack(anchor="w", padx=10)
+    entry_author = tk.Entry(win)
+    entry_author.pack(fill="x", padx=10, pady=2)
+    entry_author.insert(0, book_data["author"])
+
+    tk.Label(win, text="ISBN-13:").pack(anchor="w", padx=10)
+    entry_isbn = tk.Entry(win)
+    entry_isbn.pack(fill="x", padx=10, pady=2)
+    entry_isbn.insert(0, book_data["isbn_13"] or "")
+
+    tk.Label(win, text="Publisher:").pack(anchor="w", padx=10)
+    entry_publisher = tk.Entry(win)
+    entry_publisher.pack(fill="x", padx=10, pady=2)
+    entry_publisher.insert(0, book_data["publisher"] or "")
+
+    tk.Label(win, text="Genre:").pack(anchor="w", padx=10)
+    entry_genre = tk.Entry(win)
+    entry_genre.pack(fill="x", padx=10, pady=2)
+    entry_genre.insert(0, book_data["genre"] or "")
+
+    def save_changes():
+        success, message = ctrl.edit_book(
+            book_id=book_id,
+            title=entry_title.get().strip(),
+            author=entry_author.get().strip(),
+            isbn_13=entry_isbn.get().strip() or None,
+            publisher=entry_publisher.get().strip() or None,
+            genre=entry_genre.get().strip() or None
+        )
+        if success:
+            model.refresh_books()
+            parent.switch_mode("Books")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Save", command=save_changes).pack(pady=15)
+    tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
-def view_book_info_window(parent, book_id=None):
-    pass
+def view_book_info_window(parent, book_id):
+    book_data = ctrl.get_book_info(book_id)
+    if not book_data:
+        tk.messagebox.showerror("Error", f"Book with ID {book_id} not found.")
+        return
+
+    win = tk.Toplevel(parent)
+    win.title(f"View Book Info (ID: {book_id})")
+    win.geometry("350x250")
+
+    tk.Label(win, text="Book Info", font=("Arial", 12, "bold")).pack(pady=10)
+    tk.Label(win, text=f"Title: {book_data['title']}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Author: {book_data['author']}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"ISBN-13: {book_data['isbn_13'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Publisher: {book_data['publisher'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"Genre: {book_data['genre'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+
+    tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
 
 
-def delete_book_window(parent, book_id=None):
-    pass
+def delete_book_window(parent, book_id):
+    book_data = ctrl.get_book_info(book_id)
+    if not book_data:
+        tk.messagebox.showerror("Error", f"Book with ID {book_id} not found.")
+        return
+
+    win = tk.Toplevel(parent)
+    win.title("Delete Book")
+    win.geometry("250x150")
+    tk.Label(win, text=f"Delete '{book_data['title']}'?").pack(pady=20)
+
+    def confirm_delete():
+        success, message = ctrl.handler_delete_book(book_id)
+        if success:
+            model.refresh_books()
+            parent.switch_mode("Books")
+            win.destroy()
+        else:
+            tk.messagebox.showerror("Error", message)
+
+    tk.Button(win, text="Confirm", command=confirm_delete).pack(pady=5)
+    tk.Button(win, text="Cancel", command=win.destroy).pack(pady=5)
 
 
 while app_state != available_states[0]:

@@ -91,8 +91,11 @@ def get_account() -> int | None:
 
 if __name__ == '__main__':
     refresh_all()
-    print("People:", get_people_dict().values())
-    print("People:", get_people_list())
+    #print("People:", get_people_dict().values())
+    #("People:", get_people_list())
+    for person in people.values():
+        print(person)
+        print("Coords", ctrl.fetch_address(person["address_id"])[-1])
     #
     # print("Books", get_books_dict().values())
     # print("Books", get_books_list())
