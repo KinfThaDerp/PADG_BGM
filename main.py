@@ -223,7 +223,9 @@ def map_window() -> None:
     toolbar_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
     toolbar_frame.grid_columnconfigure(1, weight=1)
 
+    map_widget = tkintermapview.TkinterMapView(root_map)
     sidebar = LeftToolbar(root_map)
+    sidebar.set_map_widget(map_widget)
     sidebar.toggle_visibility()
 
     model.refresh_all()
@@ -241,7 +243,6 @@ def map_window() -> None:
         command=lambda: go_to_login(root_map))
     button_logout.grid(row=0, column=3, sticky="e", padx=10, pady=5)
 
-    map_widget = tkintermapview.TkinterMapView(root_map)
     map_widget.grid(row=1, column=1, sticky="nsew")
     map_widget.set_position(52.229722, 21.011667)
     map_widget.set_zoom(6)
@@ -325,13 +326,17 @@ class ToggleButton(Frame):
 class LeftToolbar(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
+
         self.configure(width=250, bg='lightgray')
         self.grid(row=1, column=0, sticky="ns")
         self.grid_propagate(False)
 
+
+
         self.is_visible = True
         self.current_mode = "People"
         self.listbox = None
+        self.map_widget = None
 
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -371,6 +376,9 @@ class LeftToolbar(tk.Frame):
 
         self.buttons_frame = tk.Frame(self, bg='lightgray')
         self.buttons_frame.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
+
+    def set_map_widget(self, map_widget):
+        self.map_widget = map_widget
 
     def switch_mode(self, mode):
         self.current_mode = mode
@@ -628,21 +636,45 @@ def view_person_info_window(parent, person_id):
         return
 
     win = tk.Toplevel(parent)
-    win.title(f"View Person Info (ID: {person_id})")
+    win.title(f"Info: {person_data['name']} {person_data['surname']}")
     win.geometry("350x300")
 
-    tk.Label(win, text=f"Person Info", font=("Arial", 12, "bold")).pack(pady=10)
-    tk.Label(win, text=f"Name: {person_data['name']}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Surname: {person_data['surname']}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Role: {person_data['role']}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Phone: {person_data['phone_number'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Email: {person_data['email'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"City: {person_data['city'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Street: {person_data['street'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Building: {person_data['building'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Apartment: {person_data['apartment'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    tk.Label(win, text=f"{person_data['name']} {person_data['surname']}", font=("Arial", 14, "bold")
+             ).pack(pady=10)
+    tk.Label(win, text=f"City: {person_data['city'] or 'N/A'}"
+             ).pack(padx=10, pady=2)
+    tk.Label(win, text=f"Street: {person_data['street'] or 'N/A'}"
+             ).pack(padx=10, pady=2)
+    tk.Label(win, text=f"Building: {person_data['building'] or 'N/A'}"
+             ).pack(padx=10, pady=2)
+    tk.Label(win, text=f"Apartment: {person_data['apartment'] or 'N/A'}"
+             ).pack(padx=10, pady=2)
+    tk.Label(win, text=f"Role: {person_data['role'].capitalize()}").pack()
 
-    tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
+    lib_info = ctrl.fetch_employee_library_info(person_id)
+    if lib_info:
+        lib_id, lib_name = lib_info
+        lib_frame = tk.Frame(win)
+        lib_frame.pack(pady=10)
+        tk.Label(lib_frame, text=f"Works at: {lib_name}", fg="blue").pack(side="left")
+        tk.Button(lib_frame, text="View Library", command=lambda: view_library_info_window(parent, lib_id, getattr(parent, 'map_widget', None))
+                  ).pack(side="left", padx=5)
+
+    contact = ctrl.fetch_contact(person_data["contact_id"])
+    if contact:
+        tk.Label(win, text=f"Email: {contact[1]}").pack()
+        tk.Label(win, text=f"Phone: {contact[0]}").pack()
+
+    button_frame = tk.Frame(win)
+    button_frame.pack(pady=20, fill="x", padx=20)
+    tk.Button(button_frame, text="Add New", command=lambda: add_person_window(parent)
+              ).pack(side="left", expand=True, padx=2)
+    tk.Button(button_frame, text="Edit", command=lambda: [win.destroy(), edit_person_window(parent, person_id)]
+              ).pack(side="left", expand=True, padx=2)
+    tk.Button(button_frame, text="Delete",command=lambda: [win.destroy(), delete_person_window(parent, person_id)]
+              ).pack(side="left", expand=True,padx=2)
+    tk.Button(button_frame, text="Close", command=win.destroy
+              ).pack(side="left", expand=True,padx=2)
 
 
 def delete_person_window(parent, person_id):
@@ -828,33 +860,89 @@ def edit_library_window(parent, library_id):
     tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
-def view_library_info_window(parent, library_id, map_widget) -> None:
-    library_data = ctrl.get_library_info(library_id)
-    if not library_data:
-        tk.messagebox.showerror("Error", f"Library with ID {library_id} not found.")
+def view_library_info_window(parent, library_id, map_widget=None):
+    lib_data = model.get_libraries_dict().get(library_id)
+    if not lib_data:
+        tk.messagebox.showerror("Error", "Library data not found.")
         return
 
     win = tk.Toplevel(parent)
-    win.title(f"View Library Info (ID: {library_id})")
-    win.geometry("400x550")
+    win.title(f"Library: {lib_data['name']}")
+    win.geometry("750x500")
+    win.resizable(False, False)
 
-    tk.Label(win, text="Library Info", font=("Arial", 12, "bold")).pack(pady=10)
-    tk.Label(win, text=f"Name: {library_data['name']}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Phone: {library_data['phone_number'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Email: {library_data['email'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"City: {library_data['city'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Street: {library_data['street'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Building: {library_data['building'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
-    tk.Label(win, text=f"Apartment: {library_data['apartment'] or 'N/A'}").pack(anchor="w", padx=10, pady=2)
+    left_frame = tk.Frame(win, padx=20, pady=20)
+    left_frame.pack(side="left", fill="both", expand=True)
 
-    tk.Button(win,text="Register at Library",
-              command=lambda: register_at_library_window(win, library_id)).pack(pady=10)
-    tk.Button(win, text="View Clients on Map",
-              command=lambda: show_filtered_people_on_map(map_widget, library_id, "client")).pack(pady=5, fill="x", padx=20)
-    tk.Button(win, text="View Employees on Map",
-              command=lambda: show_filtered_people_on_map(map_widget, library_id, "employee")
-    ).pack(pady=5, fill="x", padx=20)
-    tk.Button(win, text="Close", command=win.destroy).pack(pady=15)
+    tk.Frame(win, width=2, bd=1, relief="sunken", bg="gray").pack(side="left", fill="y", pady=10)
+
+    right_frame = tk.Frame(win, padx=20, pady=20, bg="#f8f9fa")
+    right_frame.pack(side="right", fill="both", expand=True)
+
+    tk.Label(left_frame, text=lib_data['name'], font=("Arial", 16, "bold"), wraplength=300, justify="left").pack(
+        anchor="w", pady=(0, 10))
+
+    address = ctrl.fetch_address(lib_data["address_id"])
+    if address:
+        tk.Label(left_frame, text="Address:", font=("Arial", 10, "bold")).pack(anchor="w", pady=(10, 0))
+        tk.Label(left_frame, text=f"{address[1]} {address[2]}").pack(anchor="w")
+        tk.Label(left_frame, text=f"{address[3]}, {address[0]}").pack(anchor="w")
+
+    contact = ctrl.fetch_contact(lib_data["contact_id"])
+    if contact:
+        tk.Label(left_frame, text="Contact Info:", font=("Arial", 10, "bold")).pack(anchor="w", pady=(15, 0))
+        tk.Label(left_frame, text=f"📞 {contact[0]}").pack(anchor="w")
+        tk.Label(left_frame, text=f"✉ {contact[1]}").pack(anchor="w")
+
+    tk.Button(left_frame, text="Close", width=15, command=win.destroy).pack(side="bottom", pady=10)
+
+    current_role_var = tk.StringVar(value="Employee")
+    list_label = tk.Label(right_frame, text="Library Employees", font=("Arial", 11, "bold"), bg="#f8f9fa")
+    list_label.pack(pady=(0, 5))
+
+    listbox = tk.Listbox(right_frame, font=("Arial", 10), selectmode="single", height=15)
+    listbox.pack(fill="both", expand=True, pady=5)
+
+    displayed_person_ids = []
+
+    def update_listbox(role):
+        nonlocal displayed_person_ids
+        listbox.delete(0, tk.END)
+        displayed_person_ids = []
+
+        list_label.config(text=f"Library {role}s")
+        toggle_button.config(text=f"Switch to {'Clients' if role == 'Employee' else 'Employees'}")
+        current_role_var.set(role)
+
+        if role == "Employee":
+            ids = ctrl.fetch_library_employee_ids(library_id)
+        else:
+            ids = ctrl.fetch_library_client_ids(library_id)
+        people_details = ctrl.fetch_people_details_by_ids(ids)
+
+        for person in people_details:
+            listbox.insert(tk.END, f"{person['name']}")
+            displayed_person_ids.append(person['id'])
+
+    def handle_view_person():
+        selection = listbox.curselection()
+        if not selection:
+            tk.messagebox.showwarning("Selection Required", "Please select a person from the list.")
+            return
+
+        person_id = displayed_person_ids[selection[0]]
+        view_person_info_window(win, person_id)
+
+    toggle_button = tk.Button(
+        right_frame,
+        text="Switch to Clients",
+        command=lambda: update_listbox("Client" if current_role_var.get() == "Employee" else "Employee")
+    )
+    toggle_button.pack(fill="x", pady=2)
+
+    tk.Button(right_frame,text="👤 View Person Details",command=handle_view_person).pack(fill="x", pady=5)
+
+    update_listbox("Employee")
 
 
 def delete_library_window(parent, library_id) -> None:

@@ -320,15 +320,40 @@ def fetch_contact(contact_id: int) -> tuple | None:
     cursor.execute(query, (contact_id,))
     return cursor.fetchone()
 
+
 def fetch_library_client_ids(library_id: int) -> list[int]:
     query = "SELECT person_id FROM library_client WHERE library_id = %s;"
     cursor.execute(query, (library_id,))
     return [row[0] for row in cursor.fetchall()]
 
+
 def fetch_library_employee_ids(library_id: int) -> list[int]:
     query = "SELECT person_id FROM library_employee WHERE library_id = %s;"
     cursor.execute(query, (library_id,))
     return [row[0] for row in cursor.fetchall()]
+
+
+def fetch_employee_library_info(person_id: int) -> tuple[int, str] | None:
+    query = """
+        SELECT l.id, l.name 
+        FROM library l
+        JOIN library_employee le ON l.id = le.library_id
+        WHERE le.person_id = %s
+        LIMIT 1;
+    """
+    cursor.execute(query, (person_id,))
+    return cursor.fetchone()
+
+
+def fetch_people_details_by_ids(person_ids: list[int]) -> list[dict]:
+    if not person_ids:
+        return []
+    placeholders = ', '.join(['%s'] * len(person_ids))
+    query = f"SELECT id, name, surname FROM person WHERE id IN ({placeholders})"
+
+    cursor.execute(query, tuple(person_ids))
+    rows = cursor.fetchall()
+    return [{"id": row[0], "name": f"{row[1]} {row[2]}"} for row in rows]
 
 def insert_assignment_employee_library(cursor, person_id: int, library_id: int) -> None:
     delete_query = """
