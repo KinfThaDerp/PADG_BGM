@@ -70,6 +70,7 @@ CREATE TABLE library_employee (
     id serial PRIMARY KEY,
     library_id INT REFERENCES library(id) ON DELETE CASCADE,
     person_id INT REFERENCES person(id) ON DELETE CASCADE,
+    working_since TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(library_id, person_id)
 );
 
@@ -90,4 +91,13 @@ CREATE TABLE book_copy (
     library_id INT REFERENCES library(id) ON DELETE SET NULL,
     barcode text,
     condition text
+);
+
+
+CREATE TABLE library_client (
+    id serial PRIMARY KEY,
+    library_id INT REFERENCES library(id) ON DELETE CASCADE,
+    person_id INT REFERENCES person(id) ON DELETE CASCADE,
+    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(library_id, person_id)
 );
