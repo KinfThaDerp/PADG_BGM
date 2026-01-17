@@ -637,7 +637,7 @@ def view_person_info_window(parent, person_id):
 
     win = tk.Toplevel(parent)
     win.title(f"Info: {person_data['name']} {person_data['surname']}")
-    win.geometry("350x300")
+    win.geometry("400x300")
 
     tk.Label(win, text=f"{person_data['name']} {person_data['surname']}", font=("Arial", 14, "bold")
              ).pack(pady=10)
@@ -905,6 +905,13 @@ def view_library_info_window(parent, library_id, map_widget=None):
 
     displayed_person_ids = []
 
+    toggle_button = tk.Button(
+        right_frame,
+        text="Switch to Clients",
+        command=lambda: update_listbox("Client" if current_role_var.get() == "Employee" else "Employee")
+    )
+    toggle_button.pack(fill="x", pady=2)
+
     def update_listbox(role):
         nonlocal displayed_person_ids
         listbox.delete(0, tk.END)
@@ -933,14 +940,16 @@ def view_library_info_window(parent, library_id, map_widget=None):
         person_id = displayed_person_ids[selection[0]]
         view_person_info_window(win, person_id)
 
-    toggle_button = tk.Button(
-        right_frame,
-        text="Switch to Clients",
-        command=lambda: update_listbox("Client" if current_role_var.get() == "Employee" else "Employee")
-    )
-    toggle_button.pack(fill="x", pady=2)
 
-    tk.Button(right_frame,text="👤 View Person Details",command=handle_view_person).pack(fill="x", pady=5)
+
+    tk.Button(right_frame,text="View Person Details",command=handle_view_person).pack(fill="x", pady=5)
+
+    if map_widget:
+         tk.Button(
+            right_frame,
+            text="Show Group on Map",
+            command=lambda: show_filtered_people_on_map(map_widget, library_id, current_role_var.get().lower())
+        ).pack(fill="x", pady=5)
 
     update_listbox("Employee")
 
