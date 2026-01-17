@@ -5,7 +5,6 @@ account_id:int | None = None
 people: dict[int, dict] = {}
 books: dict[int, dict] = {}
 libraries: dict[int, dict] = {}
-map_markers: dict[str, dict[int, any]] = {"libraries": {}, "people": {}}
 
 
 def refresh_people() -> None:
@@ -26,7 +25,6 @@ def refresh_people() -> None:
     }
 
 
-
 def refresh_books() -> None:
     global books
     rows = ctrl.fetch_books()
@@ -44,7 +42,6 @@ def refresh_books() -> None:
     }
 
 
-
 def refresh_libraries() -> None:
     global libraries
     rows = ctrl.fetch_libraries()
@@ -59,7 +56,6 @@ def refresh_libraries() -> None:
         }
         for row in rows
     }
-
 
 
 def refresh_all() -> None:
@@ -109,6 +105,4 @@ def get_account() -> int | None:
 
 if __name__ == '__main__':
     refresh_all()
-    print("First", map_markers)
-    map_markers = {"libraries": [],"people": []}
-    print("Second", map_markers)
+

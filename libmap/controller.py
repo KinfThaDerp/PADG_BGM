@@ -186,7 +186,19 @@ def insert_book(cursor, title: str, author: str, isbn_13: str | None, publisher:
     return cursor.fetchone()[0]
 
 
-
+def assign_employee_to_library(cursor, person_id: int, library_id: int) -> None:
+    query = """
+            INSERT INTO library_employee (person_id, library_id)
+            VALUES (%s, %s)
+            ON CONFLICT (person_id, library_id) DO NOTHING; \
+            """
+    cursor.execute(query, (person_id, library_id))
+    update_role_query = """
+                        UPDATE person
+                        SET role = 'employee'
+                        WHERE id = %s; \
+                        """
+    cursor.execute(update_role_query, (person_id,))
 
 
 # Database - Updates
@@ -298,18 +310,6 @@ def fetch_city(person_id: int) -> str | None:
     result = cursor.fetchone()
     return result[0] if result else None
 
-def fetch_city_name(city_id: int) -> str | None:
-    query = "SELECT name FROM city WHERE id = %s;"
-    cursor.execute(query, (city_id,))
-    result = cursor.fetchone()
-    return result[0] if result else None
-
-def fetch_all_city_names() -> list[str]:
-    query = "SELECT DISTINCT name FROM city ORDER BY name;"
-    cursor.execute(query)
-    rows = cursor.fetchall()
-    return [row[0] for row in rows]
-
 
 def fetch_address(address_id: int) -> tuple[str, str, str, str, list[float]]:
     query = """
@@ -329,99 +329,11 @@ def fetch_contact(contact_id: int) -> tuple | None:
            FROM contact 
            WHERE id = %s
             """
+
+
     cursor.execute(query, (contact_id,))
     return cursor.fetchone()
 
-
-def fetch_library_client_ids(library_id: int) -> list[int]:
-    query = "SELECT person_id FROM library_client WHERE library_id = %s;"
-    cursor.execute(query, (library_id,))
-    return [row[0] for row in cursor.fetchall()]
-
-
-def fetch_library_employee_ids(library_id: int) -> list[int]:
-    query = "SELECT person_id FROM library_employee WHERE library_id = %s;"
-    cursor.execute(query, (library_id,))
-    return [row[0] for row in cursor.fetchall()]
-
-
-def fetch_employee_library_info(person_id: int) -> tuple[int, str] | None:
-    query = """
-        SELECT l.id, l.name 
-        FROM library l
-        JOIN library_employee le ON l.id = le.library_id
-        WHERE le.person_id = %s
-        LIMIT 1;
-    """
-    cursor.execute(query, (person_id,))
-    return cursor.fetchone()
-
-
-def fetch_employees_by_city_name(city_name: str) -> list[dict]:
-    query = """
-        SELECT p.id, p.name, p.surname
-        FROM person p
-        JOIN address a ON p.address_id = a.id
-        JOIN city c ON a.city_id = c.id
-        WHERE c.name ILIKE %s AND p.role = 'employee';
-    """
-    cursor.execute(query, (city_name,))
-    rows = cursor.fetchall()
-    return [{"id": r[0], "name": f"{r[1]} {r[2]}"} for r in rows]
-
-
-def fetch_people_details_by_ids(person_ids: list[int]) -> list[dict]:
-    if not person_ids:
-        return []
-    placeholders = ', '.join(['%s'] * len(person_ids))
-    query = f"SELECT id, name, surname FROM person WHERE id IN ({placeholders})"
-
-    cursor.execute(query, tuple(person_ids))
-    rows = cursor.fetchall()
-    return [{"id": row[0], "name": f"{row[1]} {row[2]}"} for row in rows]
-
-def insert_assignment_employee_library(cursor, person_id: int, library_id: int) -> None:
-    delete_query = """
-                   DELETE FROM library_client 
-                   WHERE person_id = %s AND library_id = %s;
-                   """
-    cursor.execute(delete_query, (person_id, library_id))
-
-    query = """
-            INSERT INTO library_employee (person_id, library_id)
-            VALUES (%s, %s)
-            ON CONFLICT (person_id, library_id) DO NOTHING;
-            """
-    cursor.execute(query, (person_id, library_id))
-
-    update_role_query = """
-                        UPDATE person
-                        SET role = 'employee'
-                        WHERE id = %s;
-                        """
-    cursor.execute(update_role_query, (person_id,))
-
-
-def insert_assignment_client_library(cursor, person_id: int, library_id: int) -> None:
-    delete_query = """
-                   DELETE FROM library_employee 
-                   WHERE person_id = %s AND library_id = %s;
-                   """
-    cursor.execute(delete_query, (person_id, library_id))
-
-    query = """
-            INSERT INTO library_client (person_id, library_id)
-            VALUES (%s, %s)
-            ON CONFLICT (library_id, person_id) DO NOTHING;
-            """
-    cursor.execute(query, (person_id, library_id))
-
-    update_role_query = """
-                        UPDATE person
-                        SET role = 'client'
-                        WHERE id = %s;
-                        """
-    cursor.execute(update_role_query, (person_id,))
 
 def register_account_person(
     username: str,
@@ -930,24 +842,6 @@ def delete_library(library_id: int) -> tuple[bool, str]:
     except Exception as e:
         return False, f"Failed to delete library: {str(e)}"
 
-def assign_client_to_library(person_id, library_id) -> tuple[bool, str]:
-    try:
-        with connection:
-            with connection.cursor() as cursor:
-                insert_assignment_client_library(cursor, person_id, library_id)
-        return True, "Registered"
-    except Exception as e:
-        return False, str(e)
-
-def assign_employee_to_library(person_id, library_id) -> tuple[bool, str]:
-    try:
-        with connection:
-            with connection.cursor() as cursor:
-                insert_assignment_employee_library(cursor, person_id, library_id)
-        return True, "Registered"
-    except Exception as e:
-        return False, str(e)
-
 
 if __name__ == "__main__":
     print("Running controller.py")
@@ -956,4 +850,4 @@ if __name__ == "__main__":
     # connection.commit()
     # login_account("KinfThaDerp", "lol123")
     # print("miasto", fetch_city(fetch_person_id("Bassamm", "Mandilii")))
-    # print(fetch_address(13))
+    print(fetch_address(13))
