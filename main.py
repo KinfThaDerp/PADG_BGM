@@ -323,6 +323,7 @@ class ToggleButton(Frame):
         else:
             view_library_info_window(self, id_, self.map_widget)
 
+
 class LeftToolbar(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -331,11 +332,10 @@ class LeftToolbar(tk.Frame):
         self.grid(row=1, column=0, sticky="ns")
         self.grid_propagate(False)
 
-
-
         self.is_visible = True
         self.current_mode = "People"
         self.listbox = None
+        self.listbox_ids = []
         self.map_widget = None
 
         self.grid_rowconfigure(2, weight=1)
@@ -346,17 +346,19 @@ class LeftToolbar(tk.Frame):
 
         tk.Button(self.mode_frame, text="People", command=lambda: self.switch_mode("People")).pack(side="left", padx=2)
         tk.Button(self.mode_frame, text="Books", command=lambda: self.switch_mode("Books")).pack(side="left", padx=2)
-        tk.Button(self.mode_frame, text="Libraries", command=lambda: self.switch_mode("Libraries")).pack(side="left", padx=2)
+        tk.Button(self.mode_frame, text="Libraries", command=lambda: self.switch_mode("Libraries")).pack(side="left",
+                                                                                                         padx=2)
+
+        tk.Button(self.mode_frame, text="Refresh",
+                  command=lambda: [model.refresh_all(), self.switch_mode(self.current_mode)]).pack(side="right", padx=2)
 
         self.info_frame = tk.Frame(self, bg='lightgray')
         self.info_frame.grid(row=1, column=0, sticky="ew", padx=5)
-
 
         self.current_mode_label = tk.Label(self.info_frame, text=self.current_mode, bg='lightgray')
         self.current_mode_label.pack(side="left")
 
 
-        tk.Button(self.info_frame, text="Refresh", command=lambda: model.refresh_all()).pack(side="right", padx=2)
 
 
         self.role_filter_var = tk.StringVar(value="All")
@@ -366,9 +368,16 @@ class LeftToolbar(tk.Frame):
             "All", "Client", "Employee",
             command=lambda _: self.apply_role_filter()
         )
-        self.role_filter_dropdown.config(width=8) #
-        self.role_filter_dropdown.pack(side="right", padx=2)
+        self.role_filter_dropdown.config(width=8)
 
+        self.city_filter_var = tk.StringVar(value="All Cities")
+        self.city_filter_dropdown = tk.OptionMenu(
+            self.info_frame,
+            self.city_filter_var,
+            "All Cities",
+            command=lambda _: self.apply_library_city_filter()
+        )
+        self.city_filter_dropdown.config(width=12)
 
         self.list_frame = tk.Frame(self, bg='lightgray')
         self.list_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
@@ -387,8 +396,25 @@ class LeftToolbar(tk.Frame):
         display_items = []
         ids = []
 
-        if mode == "People":self.role_filter_dropdown.pack(side="right", padx=2)
-        else: self.role_filter_dropdown.pack_forget()
+        if mode == "People":
+            self.role_filter_dropdown.pack(side="right", padx=2)
+            self.city_filter_dropdown.pack_forget()
+        elif mode == "Libraries":
+            self.role_filter_dropdown.pack_forget()
+
+            cities = ctrl.fetch_all_city_names()
+            menu = self.city_filter_dropdown["menu"]
+            menu.delete(0, "end")
+            menu.add_command(label="All Cities",
+                             command=lambda: [self.city_filter_var.set("All Cities"), self.apply_library_city_filter()])
+            for city in cities:
+                menu.add_command(label=city,
+                                 command=lambda c=city: [self.city_filter_var.set(c), self.apply_library_city_filter()])
+
+            self.city_filter_dropdown.pack(side="right", padx=2)
+        else:
+            self.role_filter_dropdown.pack_forget()
+            self.city_filter_dropdown.pack_forget()
 
         if mode == "People":
             self.items = model.get_people_list()
@@ -411,6 +437,9 @@ class LeftToolbar(tk.Frame):
         self.create_list(display_items, ids)
         self.create_mode_buttons(mode)
 
+        if mode == "Libraries" and self.city_filter_var.get():
+            self.apply_library_city_filter()
+
     def create_mode_buttons(self, mode):
         for widget in self.buttons_frame.winfo_children():
             widget.destroy()
@@ -422,11 +451,85 @@ class LeftToolbar(tk.Frame):
                 command=lambda a=action, m=mode: self.handle_action(m, a)
             ).pack(fill="x", pady=2)
 
+        if mode == "Libraries":
+            tk.Frame(self.buttons_frame, height=5, bg="lightgray").pack()  # Spacer
+            tk.Button(
+                self.buttons_frame,
+                text="Show All Employees of City",
+                bg="#e1f5fe",
+                command=self.show_city_employees_handler
+            ).pack(fill="x", pady=2)
+
+    def apply_library_city_filter(self):
+        if self.current_mode != "Libraries":
+            return
+
+        target_city = self.city_filter_var.get()
+        all_libs = model.get_libraries_list()
+
+        display_items = []
+        ids = []
+
+        if self.map_widget:
+            for marker in model.map_markers["libraries"].values():
+                marker.delete()
+            model.map_markers["libraries"].clear()
+
+        for lib in all_libs:
+            lib_id = lib['id']
+            city_name = ctrl.fetch_city_name(lib['city_id'])
+
+            if target_city == "All Cities" or (city_name == target_city):
+                display_items.append(lib['name'])
+                ids.append(lib_id)
+
+                if self.map_widget:
+                    addr_info = ctrl.fetch_address(lib["address_id"])
+                    coords = addr_info[-1]
+
+                    if coords and len(coords) == 2:
+                        marker_command = lambda m, l_id=lib_id: view_library_info_window(self, l_id, self.map_widget)
+
+                        new_marker = self.map_widget.set_marker(
+                            coords[0], coords[1],
+                            text=lib["name"],
+                            command=marker_command
+                        )
+                        model.map_markers["libraries"][lib_id] = new_marker
+
+        self.create_list(display_items, ids)
+
+    def show_city_employees_handler(self):
+        city_name = self.city_filter_var.get()
+        if city_name == "All Cities":
+            tk.messagebox.showwarning("Selection Required", "Please select a specific city from the dropdown first.")
+            return
+
+        employees = ctrl.fetch_employees_by_city_name(city_name)
+
+        display_items = [f"{e['name']}" for e in employees]
+        ids = [e['id'] for e in employees]
+
+        self.create_list(display_items, ids)
+        self.current_mode_label.config(text=f"Employees in {city_name.capitalize()}")
+
+        for widget in self.buttons_frame.winfo_children():
+            widget.destroy()
+
+        tk.Button(self.buttons_frame, text="View Info", command=lambda: self.handle_action("People", "View Info")).pack(
+            fill="x", pady=2)
+        tk.Button(self.buttons_frame, text="Back to Libraries", command=lambda: self.switch_mode("Libraries")).pack(
+            fill="x", pady=2)
+
     def handle_action(self, mode, action):
         selected_id = None
         if self.listbox and self.listbox.curselection():
             selected_index = self.listbox.curselection()[0]
             selected_id = self.listbox_ids[selected_index]
+        else:
+            if action != "Add":
+                tk.messagebox.showwarning("Selection", "Please select an item first.")
+                return
 
         if mode == "People":
             if action == "Add":
@@ -475,8 +578,7 @@ class LeftToolbar(tk.Frame):
     def apply_role_filter(self):
         if self.current_mode == "People":
             self.switch_mode("People")
-
-            if hasattr(self, 'people_toggle') and self.people_toggle.markers_drawn:
+            if hasattr(self, 'people_toggle') and hasattr(self.people_toggle, 'markers_drawn') and self.people_toggle.markers_drawn:
                 self.people_toggle.draw_markers()
 
 # CRUD Windows

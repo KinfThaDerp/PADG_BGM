@@ -298,6 +298,18 @@ def fetch_city(person_id: int) -> str | None:
     result = cursor.fetchone()
     return result[0] if result else None
 
+def fetch_city_name(city_id: int) -> str | None:
+    query = "SELECT name FROM city WHERE id = %s;"
+    cursor.execute(query, (city_id,))
+    result = cursor.fetchone()
+    return result[0] if result else None
+
+def fetch_all_city_names() -> list[str]:
+    query = "SELECT DISTINCT name FROM city ORDER BY name;"
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    return [row[0] for row in rows]
+
 
 def fetch_address(address_id: int) -> tuple[str, str, str, str, list[float]]:
     query = """
@@ -343,6 +355,19 @@ def fetch_employee_library_info(person_id: int) -> tuple[int, str] | None:
     """
     cursor.execute(query, (person_id,))
     return cursor.fetchone()
+
+
+def fetch_employees_by_city_name(city_name: str) -> list[dict]:
+    query = """
+        SELECT p.id, p.name, p.surname
+        FROM person p
+        JOIN address a ON p.address_id = a.id
+        JOIN city c ON a.city_id = c.id
+        WHERE c.name ILIKE %s AND p.role = 'employee';
+    """
+    cursor.execute(query, (city_name,))
+    rows = cursor.fetchall()
+    return [{"id": r[0], "name": f"{r[1]} {r[2]}"} for r in rows]
 
 
 def fetch_people_details_by_ids(person_ids: list[int]) -> list[dict]:
