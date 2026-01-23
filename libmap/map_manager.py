@@ -7,8 +7,11 @@ class MapManager:
     def __init__(self, parent_view, widget):
         self.parent_view = parent_view
         self.widget = widget
-        self.markers = {"people": {}, "libraries": {}}  # Store active markers
-        self.display_data = {"people": {}, "libraries": {}}  # Store data separately
+        self.markers = {"people": {}, "libraries": {}}
+        self.display_data = {"people": {}, "libraries": {}}
+
+        self.people_visible = False
+        self.libraries_visible = False
 
     def set_position(self, lat, lon, zoom=6):
         self.widget.set_position(lat, lon)

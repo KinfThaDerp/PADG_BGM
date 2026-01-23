@@ -198,7 +198,8 @@ class LeftToolbar(tk.Frame):
                 self.listbox.insert(tk.END, f"{p['name']} {p['surname']} ({p['role']})")
                 self.listbox_ids.append(p['id'])
 
-        self.map_manager.draw_people(model.people, role.lower())
+        if self.map_manager.people_visible:
+            self.map_manager.draw_people(model.people, role.lower())
 
     def setup_libraries_mode(self):
         tk.Label(self.filter_frame, text="City:", bg="lightgray").pack(side="left")
@@ -220,7 +221,8 @@ class LeftToolbar(tk.Frame):
                 self.listbox.insert(tk.END, lib['name'])
                 self.listbox_ids.append(lib['id'])
 
-        self.map_manager.draw_libraries(model.libraries, city_filter)
+        if self.map_manager.libraries_visible:
+            self.map_manager.draw_libraries(model.libraries, city_filter)
 
     def setup_books_mode(self):
         self.clear_listbox()
@@ -305,7 +307,7 @@ class MapView(tk.Frame):
         self.show_libraries_button.config(command=lambda: self.toggle_libraries(self.show_libraries_button))
         self.show_libraries_button.pack(side="right", padx=10)
 
-        self.show_people_button = tk.Button(self.top_bar, text="Hide People")
+        self.show_people_button = tk.Button(self.top_bar, text="Show People")
         self.show_people_button.config(command=lambda: self.toggle_people(self.show_people_button))
         self.show_people_button.pack(side="right", padx=10)
 
@@ -324,28 +326,34 @@ class MapView(tk.Frame):
                   ).pack(side="left", padx=10)
 
     def toggle_libraries(self, button: tk.Button):
-        if len(self.map_manager.markers["libraries"]) > 0:
+        if self.map_manager.libraries_visible:
+            self.map_manager.libraries_visible = False
             self.map_manager.clear_markers("libraries")
-            button.config(text="Show Libraries")
+            button.config(text="Show Libraries", relief="raised")
         else:
+            self.map_manager.libraries_visible = True
             model.refresh_libraries()
             libraries_data = model.get_libraries_dict()
             self.map_manager.draw_libraries(
                 libraries_data=libraries_data,
                 city_filter=self.sidebar.city_filter.get())
-            button.config(text="Hide Libraries")
+            button.config(text="Hide Libraries", relief="sunken")
+
 
     def toggle_people(self, button: tk.Button):
-        if len(self.map_manager.markers["people"]) > 0:
+        if self.map_manager.people_visible:
+            self.map_manager.people_visible = False
             self.map_manager.clear_markers("people")
-            button.config(text="Show People")
+            button.config(text="Show People", relief="raised")
         else:
+            self.map_manager.people_visible = True
             model.refresh_people()
             people_data = model.get_people_dict()
             self.map_manager.draw_people(
                 people_data=people_data,
                 role_filter=self.sidebar.role_filter.get().lower())
-            button.config(text="Hide People")
+            button.config(text="Hide People", relief="sunken")
+
 
 
 
