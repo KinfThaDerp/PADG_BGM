@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, Frame
 import tkintermapview
-from libmap import controller as ctrl, model
+from libmap import controller as ctrl, model, map_manager
 from libmap.map_manager import MapManager
 import libmap.views_popups as popup
 
@@ -131,6 +131,8 @@ class LeftToolbar(tk.Frame):
         self.grid_propagate(False)
 
         self.current_mode = "People"
+        self.role_filter = tk.StringVar(value="All")
+        self.city_filter = tk.StringVar(value="All Cities")
         self.listbox = None
         self.listbox_ids = []
 
@@ -180,9 +182,9 @@ class LeftToolbar(tk.Frame):
 
     def setup_people_mode(self):
         tk.Label(self.filter_frame, text="Role:", bg="lightgray").pack(side="left")
-        role_filter = tk.StringVar(value="All")
-        opt = tk.OptionMenu(self.filter_frame, role_filter, "All", "client", "employee",
-                            command=lambda _: self.refresh_list_people(role_filter.get()))
+
+        opt = tk.OptionMenu(self.filter_frame, self.role_filter, "All", "client", "employee",
+                            command=lambda _: self.refresh_list_people(self.role_filter.get()))
         opt.pack(side="left")
 
         self.refresh_list_people("All")
@@ -201,9 +203,8 @@ class LeftToolbar(tk.Frame):
     def setup_libraries_mode(self):
         tk.Label(self.filter_frame, text="City:", bg="lightgray").pack(side="left")
         cities = ctrl.fetch_all_city_names()
-        var = tk.StringVar(value="All Cities")
-        opt = tk.OptionMenu(self.filter_frame, var, "All Cities", *cities,
-                            command=lambda _: self.refresh_list_libraries(var.get()))
+        opt = tk.OptionMenu(self.filter_frame, self.city_filter, "All Cities", *cities,
+                            command=lambda _: self.refresh_list_libraries(self.city_filter.get()))
         opt.pack(side="left")
 
         self.refresh_list_libraries("All Cities")
@@ -300,12 +301,20 @@ class MapView(tk.Frame):
 
         tk.Button(self.top_bar, text="Logout", command=controller.logout).pack(side="right", padx=10)
 
+        self.show_libraries_button = tk.Button(self.top_bar, text="Show Libraries")
+        self.show_libraries_button.config(command=lambda: self.toggle_libraries(self.show_libraries_button))
+        self.show_libraries_button.pack(side="right", padx=10)
+
+        self.show_people_button = tk.Button(self.top_bar, text="Hide People")
+        self.show_people_button.config(command=lambda: self.toggle_people(self.show_people_button))
+        self.show_people_button.pack(side="right", padx=10)
+
         self.map_widget = tkintermapview.TkinterMapView(self)
         self.map_widget.grid(row=1, column=1, sticky="nsew")
         self.map_widget.set_position(52.229722, 21.011667)
         self.map_widget.set_zoom(6)  #
 
-        self.map_manager = MapManager(self.map_widget, parent_view=self)
+        self.map_manager = MapManager(widget=self.map_widget, parent_view=self)
 
         self.sidebar = LeftToolbar(self, self.map_manager)
         self.sidebar.grid(row=1, column=0, sticky="ns")
@@ -313,6 +322,33 @@ class MapView(tk.Frame):
         tk.Button(self.top_bar, text="Toggle Sidebar",
                   command=lambda: self.sidebar.grid_remove() if self.sidebar.winfo_viewable() else self.sidebar.grid()
                   ).pack(side="left", padx=10)
+
+    def toggle_libraries(self, button: tk.Button):
+        if len(self.map_manager.markers["libraries"]) > 0:
+            self.map_manager.clear_markers("libraries")
+            button.config(text="Show Libraries")
+        else:
+            model.refresh_libraries()
+            libraries_data = model.get_libraries_dict()
+            self.map_manager.draw_libraries(
+                libraries_data=libraries_data,
+                city_filter=self.sidebar.city_filter.get())
+            button.config(text="Hide Libraries")
+
+    def toggle_people(self, button: tk.Button):
+        if len(self.map_manager.markers["people"]) > 0:
+            self.map_manager.clear_markers("people")
+            button.config(text="Show People")
+        else:
+            model.refresh_people()
+            people_data = model.get_people_dict()
+            self.map_manager.draw_people(
+                people_data=people_data,
+                role_filter=self.sidebar.role_filter.get().lower())
+            button.config(text="Hide People")
+
+
+
 
     def on_show(self):
         model.refresh_all()
